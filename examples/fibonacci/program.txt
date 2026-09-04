@@ -1,0 +1,20 @@
+local res, i, firstres, secondres
+
+fn FIB (res, i)
+call BASE (ref res, i)
+call REC (ref res, i)
+return
+
+fn REC (res, i)
+if i <= 1 return
+i = i - 1
+call FIB (ref firstres, i)
+i = i - 1
+call FIB (ref secondres, i)
+res = firstres + secondres
+return
+
+fn BASE (res, i)
+if 2 <= i return
+res = i
+return

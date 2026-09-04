@@ -1,0 +1,10 @@
+{
+  "target": {
+    "epsilon": 1
+  },
+  "const": {
+    "TRUE": 99,
+    "FALSE": -1,
+    "MAIN": 1
+  }
+}

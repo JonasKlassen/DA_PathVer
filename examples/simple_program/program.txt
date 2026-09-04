@@ -1,0 +1,13 @@
+local x, y, z
+
+fn FOO()
+x = 1
+y = 1
+z = 1
+call BAR(y, ref z)
+return
+fn BAR(y, z)
+x = 2
+y = 2
+z = 2
+return

@@ -1,0 +1,12 @@
+{
+  "target": {
+    "epsilon": 1,
+    "3": 2
+  },
+  "const": {
+    "TRUE": 1,
+    "FALSE": 0,
+    "FOO": 1,
+    "BAR": 2
+  }
+}

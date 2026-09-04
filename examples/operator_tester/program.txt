@@ -1,0 +1,19 @@
+local a, b, c, o, p, q, r, s, t, u, v, w, x, y, z
+
+fn MAIN()
+a = 0
+b = 0
+c = 0
+o = a | b
+p = a & b
+q = a + b
+r = a - b
+s = a >= b
+t = a <= b
+u = a == b
+v = a != b
+w = a > b
+x = a < b
+y = a => b
+z = a <=> b
+return

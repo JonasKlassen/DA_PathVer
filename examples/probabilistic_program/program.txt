@@ -1,0 +1,14 @@
+local a, x, y
+
+fn MAIN (a)
+    x = 0 <= y
+    call x (ref a)
+return
+
+fn POSITIVE (a)
+    a = 1
+return
+
+fn NEGATIVE (a)
+    a = -1
+return
