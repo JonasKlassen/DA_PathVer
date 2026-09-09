@@ -1,6 +1,6 @@
 # Repeat-Arr Verifier
 
-Repeat-Arr Verifier is a standalone symbolic execution and contract verification tool for programs written in the Repeat-Arr language. It includes a command-line interface, a Tkinter GUI, parsers, examples, and its own Python requirements file.
+Repeat-Arr Verifier is a standalone symbolic execution and contract verification tool for programs written in the Repeat-Arr language. It includes a command-line interface, a Tkinter GUI, parsers and examples.
 
 ## Installation
 
@@ -11,7 +11,7 @@ python -m venv .venv
 .\.venv\Scripts\pip install -r repeat_arr_verifier\requirements.txt
 ```
 
-The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated parser files are already included, so ANTLR is only needed when changing `program/antlr/repeat_arr.g4`.
+The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated parser files are already included, so ANTLR is only needed when changing `program/antlr/repeat_arr.g4` or `contract/antlr/contract.g4`.
 
 To regenerate the program parser after grammar changes:
 
@@ -19,6 +19,7 @@ To regenerate the program parser after grammar changes:
 cd repeat_arr_verifier\program\antlr
 java -jar C:\antlr\antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor repeat_arr.g4
 ```
+This requires the ANTLR software (`https://www.antlr.org/download/antlr-4.13.2-complete.jar`) to be in the folder `C:\antlr`.
 
 ## Running
 
