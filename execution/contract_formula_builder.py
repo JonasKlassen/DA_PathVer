@@ -2,7 +2,7 @@ from pysmt.shortcuts import And, Or, Not, Implies, Iff, Equals, LE, Int, Select,
 from pysmt.typing import INT
 import re
 
-from repeat_arr_verifier.contract.ast.contract_ast_nodes import *
+from DA_PathVer.contract.ast.contract_ast_nodes import *
 
 
 class ContractFormulaBuilder:

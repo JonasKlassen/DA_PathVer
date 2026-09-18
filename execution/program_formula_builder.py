@@ -4,7 +4,7 @@ from pysmt.shortcuts import Symbol, Equals, And, Int, Select, Store, Plus, Minus
     LT, Or
 from pysmt.typing import ARRAY_INT_INT, INT
 
-from repeat_arr_verifier.program.ast.program_ast_nodes import *
+from DA_PathVer.program.ast.program_ast_nodes import *
 
 
 def get_statement(ast, func_name, index_str, target):

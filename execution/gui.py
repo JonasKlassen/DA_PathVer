@@ -6,15 +6,15 @@ from tkinter import filedialog, messagebox, ttk
 
 from antlr4 import *
 from pysmt.shortcuts import Solver, Not, get_env
-from repeat_arr_verifier.contract.antlr.contractLexer import contractLexer
-from repeat_arr_verifier.contract.antlr.contractParser import contractParser
-from repeat_arr_verifier.contract.ast.contract_ast_builder import ContractASTBuilder
-from repeat_arr_verifier.execution.contract_formula_builder import ContractFormulaBuilder
-from repeat_arr_verifier.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
-from repeat_arr_verifier.program.antlr.repeat_arrLexer import repeat_arrLexer
-from repeat_arr_verifier.program.antlr.repeat_arrParser import repeat_arrParser
-from repeat_arr_verifier.program.ast.program_ast_builder import ProgramASTBuilder
-from repeat_arr_verifier.execution.trace_generator import TraceGenerator
+from DA_PathVer.contract.antlr.contractLexer import contractLexer
+from DA_PathVer.contract.antlr.contractParser import contractParser
+from DA_PathVer.contract.ast.contract_ast_builder import ContractASTBuilder
+from DA_PathVer.execution.contract_formula_builder import ContractFormulaBuilder
+from DA_PathVer.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
+from DA_PathVer.program.antlr.repeat_arrLexer import repeat_arrLexer
+from DA_PathVer.program.antlr.repeat_arrParser import repeat_arrParser
+from DA_PathVer.program.ast.program_ast_builder import ProgramASTBuilder
+from DA_PathVer.execution.trace_generator import TraceGenerator
 
 class RepeatArrVerifierGUI:
     def __init__(self, root):

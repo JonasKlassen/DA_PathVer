@@ -2,22 +2,22 @@ import argparse
 import json
 import os
 import sys
-# Add project root to sys.path so we can import repeat_arr_verifier packages
+# Add project root to sys.path so we can import DA_PathVer packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from antlr4 import *
 from pysmt.shortcuts import Solver, Not, get_env, Select, Int
 
 # These imports assume we are in the project root
-from repeat_arr_verifier.contract.antlr.contractLexer import contractLexer
-from repeat_arr_verifier.contract.antlr.contractParser import contractParser
-from repeat_arr_verifier.contract.ast.contract_ast_builder import ContractASTBuilder
-from repeat_arr_verifier.execution.contract_formula_builder import ContractFormulaBuilder
-from repeat_arr_verifier.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
-from repeat_arr_verifier.program.antlr.repeat_arrLexer import repeat_arrLexer
-from repeat_arr_verifier.program.antlr.repeat_arrParser import repeat_arrParser
-from repeat_arr_verifier.program.ast.program_ast_builder import ProgramASTBuilder
-from repeat_arr_verifier.execution.trace_generator import TraceGenerator
+from DA_PathVer.contract.antlr.contractLexer import contractLexer
+from DA_PathVer.contract.antlr.contractParser import contractParser
+from DA_PathVer.contract.ast.contract_ast_builder import ContractASTBuilder
+from DA_PathVer.execution.contract_formula_builder import ContractFormulaBuilder
+from DA_PathVer.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
+from DA_PathVer.program.antlr.repeat_arrLexer import repeat_arrLexer
+from DA_PathVer.program.antlr.repeat_arrParser import repeat_arrParser
+from DA_PathVer.program.ast.program_ast_builder import ProgramASTBuilder
+from DA_PathVer.execution.trace_generator import TraceGenerator
 
 def run_solver(args):
     folder = args.program

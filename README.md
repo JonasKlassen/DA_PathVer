@@ -8,7 +8,7 @@ From the repository root:
 
 ```bash
 python -m venv .venv
-.\.venv\Scripts\pip install -r repeat_arr_verifier\requirements.txt
+.\.venv\Scripts\pip install -r DA_PathVer\requirements.txt
 ```
 
 The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated parser files are already included, so ANTLR is only needed when changing `program/antlr/repeat_arr.g4` or `contract/antlr/contract.g4`.
@@ -16,25 +16,25 @@ The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated pa
 To regenerate the program parser after grammar changes:
 
 ```bash
-cd repeat_arr_verifier\program\antlr
+cd DA_PathVer\program\antlr
 java -jar C:\antlr\antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor repeat_arr.g4
 ```
 This requires the ANTLR software (`https://www.antlr.org/download/antlr-4.13.2-complete.jar`) to be in the folder `C:\antlr`.
 
 ## Running
 
-Run commands from the directory that contains the `repeat_arr_verifier` package.
+Run commands from the directory that contains the `DA_PathVer` package.
 
 Start the GUI:
 
 ```bash
-python -m repeat_arr_verifier.execution.main
+python -m DA_PathVer.execution.main
 ```
 
 Run the CLI:
 
 ```bash
-python -m repeat_arr_verifier.execution.cli [COMMAND] [OPTIONS]
+python -m DA_PathVer.execution.cli [COMMAND] [OPTIONS]
 ```
 
 ## CLI
@@ -42,31 +42,31 @@ python -m repeat_arr_verifier.execution.cli [COMMAND] [OPTIONS]
 `run` verifies a contract against a program, execution config, and trace.
 
 ```bash
-python -m repeat_arr_verifier.execution.cli run --program FOLDER --trace NUM --solver NAME --formula CONTRACT_FILE_OR_NUM --watch WATCH_ITEMS
+python -m DA_PathVer.execution.cli run --program FOLDER --trace NUM --solver NAME --formula CONTRACT_FILE_OR_NUM --watch WATCH_ITEMS
 ```
 
 Example:
 
 ```bash
-python -m repeat_arr_verifier.execution.cli run --program repeat_arr_verifier\examples\dice_game --trace 1 --solver z3 --formula 1 --watch count@0
+python -m DA_PathVer.execution.cli run --program DA_PathVer\examples\dice_game --trace 1 --solver z3 --formula 1 --watch count@0
 ```
 
 `generate-trace` creates a new concrete trace and updates the matching execution file.
 
 ```bash
-python -m repeat_arr_verifier.execution.cli generate-trace --program FOLDER --input INPUTS --trace NUM --execution SOURCE_NUM
+python -m DA_PathVer.execution.cli generate-trace --program FOLDER --input INPUTS --trace NUM --execution SOURCE_NUM
 ```
 
 Example:
 
 ```bash
-python -m repeat_arr_verifier.execution.cli generate-trace --program repeat_arr_verifier\examples\dice_game --input count=3 --trace 4 --execution 1
+python -m DA_PathVer.execution.cli generate-trace --program DA_PathVer\examples\dice_game --input count=3 --trace 4 --execution 1
 ```
 
 For all options:
 
 ```bash
-python -m repeat_arr_verifier.execution.cli [COMMAND] --help
+python -m DA_PathVer.execution.cli [COMMAND] --help
 ```
 
 ## Project Folder Layout

@@ -1,5 +1,5 @@
 import tkinter as tk
-from repeat_arr_verifier.execution.gui import RepeatArrVerifierGUI
+from DA_PathVer.execution.gui import RepeatArrVerifierGUI
 
 def main():
     root = tk.Tk()

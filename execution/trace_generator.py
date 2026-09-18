@@ -17,7 +17,7 @@ class TraceGenerator:
         self.state = {} # Global state: var_name -> {index: value}
 
     def _evaluate(self, expr, local_state):
-        from repeat_arr_verifier.program.ast.program_ast_nodes import AstInt, AstBool, Var, ArrayAccess, BinOp
+        from DA_PathVer.program.ast.program_ast_nodes import AstInt, AstBool, Var, ArrayAccess, BinOp
         
         if isinstance(expr, AstInt):
             return expr.value
@@ -70,7 +70,7 @@ class TraceGenerator:
         return self.trace, self.target
 
     def _execute_function(self, func_name, args, prefix):
-        from repeat_arr_verifier.program.ast.program_ast_nodes import Assign, Call, Return, Repeat, Var, ArrayAccess, RefArg, Arg
+        from DA_PathVer.program.ast.program_ast_nodes import Assign, Call, Return, Repeat, Var, ArrayAccess, RefArg, Arg
         
         if func_name not in self.program.functions:
             # Maybe it's a constant?

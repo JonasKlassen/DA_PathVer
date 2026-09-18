@@ -1,5 +1,5 @@
-from repeat_arr_verifier.contract.antlr.contractVisitor import contractVisitor
-from repeat_arr_verifier.contract.ast.contract_ast_nodes import *
+from DA_PathVer.contract.antlr.contractVisitor import contractVisitor
+from DA_PathVer.contract.ast.contract_ast_nodes import *
 
 class ContractASTBuilder(contractVisitor):
 

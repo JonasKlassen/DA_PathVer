@@ -1,10 +1,10 @@
 import json
 import os
 from antlr4 import *
-from repeat_arr_verifier.program.antlr.repeat_arrLexer import repeat_arrLexer
-from repeat_arr_verifier.program.antlr.repeat_arrParser import repeat_arrParser
-from repeat_arr_verifier.program.ast.program_ast_builder import ProgramASTBuilder
-from repeat_arr_verifier.execution.trace_generator import TraceGenerator
+from DA_PathVer.program.antlr.repeat_arrLexer import repeat_arrLexer
+from DA_PathVer.program.antlr.repeat_arrParser import repeat_arrParser
+from DA_PathVer.program.ast.program_ast_builder import ProgramASTBuilder
+from DA_PathVer.execution.trace_generator import TraceGenerator
 
 def run_playground():
     # Setup paths
