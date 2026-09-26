@@ -1,10 +1,112 @@
-# Repeat-Arr Verifier
+# Dependent Assertion Path Verifier
 
-Repeat-Arr Verifier is a standalone symbolic execution and contract verification tool for programs written in the Repeat-Arr language. It includes a command-line interface, a Tkinter GUI, parsers and examples.
+DA_PathVer is an SMT-based tool for checking contracts over a supplied program execution path. It combines symbolic execution with contracts inspired by dependent assertion logic: properties can refer to entry and return states, intermediate states, nested calls, and repeated procedure bodies.
+
+Given a program, a finite control-flow trace, an execution configuration, and a contract, the tool constructs symbolic constraints and searches for a counterexample. The trace fixes the sequence of control-flow events, while memory values remain symbolic wherever the program and contract leave them unconstrained. A check therefore covers the encoded memory valuations compatible with that trace, rather than just the concrete values from one test run.
+
+The current program frontend accepts Repeat-Arr, a small imperative language with integer arrays, procedure calls, and repetition. The core approach is the combination of trace-dependent memory, feasibility constraints, and assertions over selected states. The sections below describe that approach and its implemented capabilities, followed by usage instructions and input-format references.
+
+## Theoretical Background
+
+The approach draws on Lukas Grätz's [*Dependent Assertions for Specification and Control Flow Verification*](https://doi.org/10.26083/tuda-8042) (2026), particularly its treatment of dynamic indices and dependent assertion logic, and his manuscript *A Program Semantics with Dynamic State Indices* (2026).
+
+### Dynamic indices and symbolic memory
+
+A source statement can execute several times, in different calls or iterations. A **dynamic index** identifies a particular occurrence using statement numbers and nesting markers. For example, `6.1.#` identifies the return of the call at statement `1` inside the call at statement `6`. These indices let a contract distinguish states that share the same source code location.
+
+The underlying *dynx semantics* separates execution into three layers:
+
+1. **Control flow:** the supplied trace records statement occurrences, calls, repeats, and returns.
+2. **Memory:** symbolic constraints describe assignments, unchanged values, parameter passing, and the propagation of reference arguments and global variables. Unconstrained initial values represent nondeterministic choices.
+3. **Feasibility:** additional constraints require conditional returns and computed call targets to agree with the chosen trace.
+
+The implementation combines the memory and feasibility constraints into a domain formula `D`. This formula describes the encoded executions that follow the supplied control flow. The user supplies the path directly or obtains it with the trace generator. The verifier does not automatically explore alternative paths.
+
+Memory is currently modeled with SMT arrays from integers to integers. A scalar `x` is shorthand for `x[0]`, and updating one array element preserves the others. Integers and arrays have no machine overflow or fixed size in this model. Fresh local values can remain unconstrained, allowing different executions to follow the same trace. A local named `rand`, for example, has no special probabilistic meaning.
+
+### Dependent assertions
+
+A conventional pre/post contract relates a procedure's entry and exit. Dependent assertions also relate conditions at intermediate states selected by dynamic-index patterns. The same program variable can have different values at each selected state.
+
+Two modal operators specify where an assertion must hold:
+
+- `[r](A)` is a **box**: assertion `A` must hold at every position selected by `r` within the supplied trace.
+- `{r}(A)` is a **diamond**: assertion `A` must hold at at least one selected position.
+
+These modalities select positions within an execution. They do not select alternative execution paths. Nested modalities extend the current dynamic-index prefix: `[6]([1.#](A))` selects the nested return `6.1.#`. At the root, `[#](A)` refers to the outermost return.
+
+For example, the included dice game can express a condition on a particular roll's result:
+
+```text
+[6.1.#](1 <= dice & dice <= 6)
+```
+
+It can also relate an array before and after the helper call:
+
+```text
+FORALL i : (([6](seen[i] == 1)) => ([7](seen[i] == 1)))
+```
+
+Here, `seen[i]` is read in two different memory states, while the quantified integer `i` keeps the same value across both modalities. The assertion requires each previously set array entry to remain set after the call. Quantifiers range over integers, independently of the finite set of trace positions.
+
+In the theoretical semantics, selectors support concatenation, union, and zero-or-more repetition. A box over an empty selection is true, and a diamond over an empty selection is false. The current selector implementation does not implement all of these cases faithfully, as detailed in the limitations below.
+
+### From a contract to an SMT query
+
+SMT (satisfiability modulo theories) solving checks whether logical constraints over values such as integers and arrays admit a satisfying assignment. DA_PathVer translates the contract into a formula `C`, resolving boxes into conjunctions and diamonds into disjunctions over matching trace positions. Integer quantifiers remain in the SMT formula.
+
+The solver checks:
+
+```text
+D AND NOT C
+```
+
+If this is satisfiable, the model supplies values consistent with the encoded trace that violate the contract. The watch list exposes selected values from that countermodel. If it is unsatisfiable, no counterexample exists in the encoded domain for this trace.
+
+This is a single-trace guarantee. It does not establish correctness for other paths, arbitrary iteration counts, or all inputs regardless of control flow. Also, an infeasible trace makes `D` unsatisfiable, so any contract is vacuously valid on that domain. The current CLI and GUI do not perform a separate feasibility query before reporting validity.
+
+## Current Capabilities
+
+| Area | Implemented behavior |
+| --- | --- |
+| Symbolic state | Integer arrays, scalar access at index `0`, array updates, and persistence of unchanged values. |
+| Procedure state | Local and global variables, value arguments, reference-result propagation, and fresh non-parameter locals on calls. |
+| Control flow | Encoding of supplied traces containing nested calls, repetition, conditional returns, and computed call targets. Recursive examples are included. |
+| Expressions | Integer addition and subtraction, comparisons, and logical operations represented with configured integer truth values. |
+| Contracts | Comparisons, Boolean connectives, integer quantifiers, scalar and indexed array reads, `@fn`, and modal assertions over trace positions. |
+| Solver workflow | PySMT constraints, solver selection with Z3 included as a dependency, and inspection of selected countermodel values. |
+| Interfaces | CLI and Tkinter GUI for verification, concrete trace generation, and a GUI contract editor. |
+
+Trace generation executes a program with concrete initial parameter values and writes a trace and target mapping. Those input values are not automatically added as assumptions to subsequent symbolic verification, so any required input restriction must be expressed in the contract.
+
+### Scope and current limitations
+
+The implementation is a prototype for finite, supplied traces. It does not provide exhaustive path exploration, induction over loops or recursion, a general termination proof, or probability calculations. Repeat-Arr is the available frontend. A Rust frontend and richer data types are not currently implemented. Extending the source language would also require corresponding symbolic semantics.
+
+Trace selectors currently use a Python regular-expression translation with several differences from the theoretical semantics:
+
+- `?` matches a single character, rather than an arbitrary dynamic-index component.
+- `eps` is accepted by the parser but is not normalized to the trace's `epsilon` entry or treated as the empty suffix.
+- An unmatched modality produces an unresolved result rather than the standard empty-box/empty-diamond truth value. A top-level unresolved result is reported as having no matching cases. For verification, use selectors with known matches.
+
+Contract array indices should be integer literals or bound logical variables. General index expressions and program-variable indices are not supported by the contract resolver. Solver support and performance also depend on the resulting quantified integer/array formulas.
+
+## Implementation Overview
+
+| Component | Responsibility |
+| --- | --- |
+| [`program/`](program/) | Program grammar, generated parser, and abstract syntax tree construction. |
+| [`program_formula_builder.py`](execution/program_formula_builder.py) | Trace loading, symbolic memory construction, and feasibility constraints. |
+| [`contract/`](contract/) | Contract grammar, generated parser, and abstract syntax tree construction. |
+| [`contract_formula_builder.py`](execution/contract_formula_builder.py) | Trace-selector resolution and translation of assertions into PySMT formulas. |
+| [`trace_generator.py`](execution/trace_generator.py) | Concrete execution and generation of dynamic-index traces and target mappings. |
+| [`execution/`](execution/) | CLI and GUI orchestration of parsing, formula construction, solving, and result inspection. |
+
+The [dice game](examples/dice_game/) illustrates nondeterministic local values, repeated calls, reference arguments, and global state. The [Fibonacci example](examples/fibonacci/) illustrates recursive calls. Both include programs, traces, execution configurations, and contracts for experimentation.
 
 ## Installation
 
-From the repository root:
+From the directory containing the `DA_PathVer` package:
 
 ```bash
 python -m venv .venv
@@ -113,7 +215,7 @@ Step 3: Solve Contract
 1. Select the contract number.
 2. Click `Step 3: Solve Contract`.
 
-If the negated contract is satisfiable, the GUI reports a countermodel. Otherwise, it reports that the contract is valid for the selected trace.
+If the domain together with the negated contract is satisfiable, the GUI reports a countermodel. If the solver determines that the query is unsatisfiable, it reports that the contract is valid for the selected trace, subject to the scope described above.
 
 Optional: Generate a New Trace
 
@@ -135,7 +237,9 @@ Optional: Create or Edit a Contract
 
 The saved contract uses the plain grammar symbols such as `EXISTS`, `FORALL`, `{}`, `=>`, and `<=>`.
 
-## Program Language
+## Current Program Frontend
+
+Repeat-Arr supplies the current input syntax for the state and control-flow features described above. This section is a practical source-format reference.
 
 Every program starts with variable declarations followed by one or more function declarations. Each variable must be declared exactly once as either `local` or `global`.
 
@@ -170,57 +274,15 @@ return
 
 Local variables are scoped to function activations. Global variables are visible in every function and persist across function calls. A global variable cannot be passed as a `ref` argument.
 
-Function names can be written as constants such as `GAME` or `ROLL_MULT`; constants are replaced using the `const` section of the selected `executionN.json` before parsing.
+Function names can be written as constants such as `GAME` or `ROLL_MULT`. Before parsing, these constants are replaced using the `const` section of the selected `executionN.json`.
 
-### Program Grammar
-
-```antlr
-grammar repeat_arr;
-
-program: varDecl+ functionDecl+ EOF;
-
-varDecl: 'local' varList | 'global' varList;
-
-functionDecl: 'fn' INTEGER '(' paramList? ')' stmt+;
-
-paramList: varList;
-
-varList: var (',' var)*;
-
-stmt: call | assign | ret | 'repeat';
-
-call: 'call' expr '(' argList? ')';
-
-argList: arg (',' arg)*;
-
-arg: 'ref' var | var;
-
-assign: var ('[' expr ']')? '=' expr;
-
-ret: ('if' expr)? 'return';
-
-expr: expr ('=='|'<='|'<'|'!='|'>='|'>') expr
-    | expr ('&'|'|') expr
-    | expr ('+'|'-') expr
-    | expr ('=>'|'<=>') expr
-    | atom;
-
-atom: INTEGER
-    | 'TRUE'
-    | 'FALSE'
-    | var
-    | var '[' expr ']'
-    | '(' expr ')';
-
-var: ID | '@fn';
-
-INTEGER: '-'?[0-9]+;
-ID: [a-z]+;
-```
+The complete source syntax is defined in the [program grammar](program/antlr/repeat_arr.g4).
 
 ## Trace Files
 
 A trace file is a plain text file where each line represents one execution step.
+
+The symbolic state at a statement index is the state before that statement executes. An assignment's effect is visible at the next trace position. Return markers expose the state at the corresponding return.
 
 Special trace elements:
 
@@ -274,8 +336,8 @@ Contracts describe properties over trace positions and program variables.
 
 Modal forms:
 
-- `[trace](formula)`: Box modality. The formula must hold at every matching trace.
-- `{trace}(formula)`: Diamond modality. The formula must hold at some matching trace.
+- `[trace](formula)`: Box modality. The formula must hold at every matching position in the supplied trace.
+- `{trace}(formula)`: Diamond modality. The formula must hold at some matching position in the supplied trace.
 
 Quantifiers:
 
@@ -297,29 +359,4 @@ Example contract:
 [#](FORALL i : (FORALL j : ((1 <= i & j <= 6 & i < j) => seen[i] <= seen[j])))
 ```
 
-### Contract Grammar
-
-```antlr
-contract
-    : '(' contract ')'
-    | ('EXISTS'|'FORALL') VAR ':' '(' contract ')'
-    | contract ('=='|'<='|'<'|'!='|'>='|'>') contract
-    | '!' contract
-    | contract ('&'|'|') contract
-    | contract ('=>'|'<=>') contract
-    | '[' trace ']' '(' contract ')'
-    | '{' trace '}' '(' contract ')'
-    | contract_atom;
-
-trace
-    : '(' trace ')' '*'
-    | '(' trace 'U' trace ')'
-    | trace '.' trace
-    | trace_atom;
-
-contract_atom: VAR | indexed_var | '@fn' | INT;
-
-indexed_var: VAR '[' (INT|VAR) ']';
-
-trace_atom: '?' | '$' | '#' | INT | 'eps';
-```
+Selectors can combine dynamic-index components with concatenation (`r.s`), union (`(r U s)`), and repetition (`(r)*`). See the selector limitations above before using repetition, wildcards, or `eps`. The complete syntax is defined in the [contract grammar](contract/antlr/contract.g4).

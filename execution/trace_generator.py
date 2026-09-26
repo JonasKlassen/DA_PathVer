@@ -16,6 +16,17 @@ class TraceGenerator:
         self.global_vars = set(program.global_vars)
         self.state = {} # Global state: var_name -> {index: value}
 
+    @staticmethod
+    def _random_value():
+        return random.randint(-sys.maxsize + 1, sys.maxsize - 1)
+
+    def _read_global(self, name, index):
+        """Return a global value, materializing an unconstrained value on demand."""
+        values = self.state.setdefault(name, {})
+        if index not in values:
+            values[index] = self._random_value()
+        return values[index]
+
     def _evaluate(self, expr, local_state):
         from DA_PathVer.program.ast.program_ast_nodes import AstInt, AstBool, Var, ArrayAccess, BinOp
         
@@ -26,18 +37,18 @@ class TraceGenerator:
         if isinstance(expr, Var):
             name = expr.name
             if name in self.global_vars:
-                return self.state.get(name, {}).get(0, 0)
+                return self._read_global(name, 0)
             if name in local_state:
                 return local_state[name].get(0, 0)
-            return random.randint(-sys.maxsize+1, sys.maxsize-1)
+            return self._random_value()
         if isinstance(expr, ArrayAccess):
             name = expr.name
             idx = self._evaluate(expr.index, local_state)
             if name in self.global_vars:
-                return self.state.get(name, {}).get(idx, 0)
+                return self._read_global(name, idx)
             if name in local_state:
                 return local_state.get(name, {}).get(idx, 0)
-            return random.randint(-sys.maxsize+1, sys.maxsize-1)
+            return self._random_value()
         if isinstance(expr, BinOp):
             left = self._evaluate(expr.left, local_state)
             right = self._evaluate(expr.right, local_state)
@@ -69,7 +80,7 @@ class TraceGenerator:
         
         return self.trace, self.target
 
-    def _execute_function(self, func_name, args, prefix):
+    def _execute_function(self, func_name, args, prefix, ref_arg_positions=None):
         from DA_PathVer.program.ast.program_ast_nodes import Assign, Call, Return, Repeat, Var, ArrayAccess, RefArg, Arg
         
         if func_name not in self.program.functions:
@@ -87,12 +98,16 @@ class TraceGenerator:
         func = self.program.functions[func_name]
         local_state = {}
         
-        # Map args to params
-        for param, arg_val in zip(func.params, args):
-            # args are passed as values (dicts for arrays/refs)
+        # Map args to params.  Globals and explicit ref arguments retain their
+        # backing dictionary, so assignments by the callee update the caller.
+        ref_arg_positions = ref_arg_positions or set()
+        for position, (param, arg_val) in enumerate(zip(func.params, args)):
             if isinstance(arg_val, dict):
-                # Ensure keys are integers
-                local_state[param] = {int(k): v for k, v in arg_val.items()}
+                if position in ref_arg_positions:
+                    local_state[param] = arg_val
+                else:
+                    # Ensure keys are integers while preserving value semantics.
+                    local_state[param] = {int(k): v for k, v in arg_val.items()}
             else:
                 local_state[param] = {0: arg_val}
 
@@ -128,11 +143,10 @@ class TraceGenerator:
                 
                 # Prepare args
                 call_args = []
+                call_ref_positions = set()
                 non_ref_args = {}
-                for arg in stmt.args:
+                for position, arg in enumerate(stmt.args):
                     arg_name = arg.name
-                    if isinstance(arg, RefArg) and arg_name in self.global_vars:
-                        raise ValueError(f"Global variable '{arg_name}' cannot be passed as a ref argument.")
                     # Get current value of arg
                     if arg_name in self.global_vars:
                         if arg_name not in self.state: self.state[arg_name] = {}
@@ -143,15 +157,17 @@ class TraceGenerator:
                         local_state[arg_name] = {}
                         val = local_state[arg_name]
                     
-                    if isinstance(arg, RefArg):
+                    is_ref = isinstance(arg, RefArg) or arg_name in self.global_vars
+                    if is_ref:
                         call_args.append(val)
+                        call_ref_positions.add(position)
                     else:
                         call_args.append(val.copy() if isinstance(val, dict) else val)
                     if not isinstance(arg, RefArg) and arg_name not in self.global_vars:
                         # Use a deep-ish copy for dictionaries (arrays/ref types)
                         non_ref_args[arg_name] = val.copy() if isinstance(val, dict) else val
 
-                self._execute_function(callee_func_id, call_args, t_idx)
+                self._execute_function(callee_func_id, call_args, t_idx, call_ref_positions)
                 
                 for arg_name, saved_val in non_ref_args.items():
                     if arg_name in self.global_vars:
@@ -174,15 +190,20 @@ class TraceGenerator:
                 
                 # Construct updated args from local_state
                 new_args = []
-                for param in func.params:
+                repeat_ref_positions = set()
+                for position, param in enumerate(func.params):
                     val = local_state[param]
+                    if position in ref_arg_positions:
+                        new_args.append(val)
+                        repeat_ref_positions.add(position)
+                        continue
                     # Convert {0: val} back to val if it was a scalar
                     if len(val) == 1 and 0 in val:
                         new_args.append(val[0])
                     else:
                         new_args.append(val)
                         
-                self._execute_function(func_name, new_args, repeat_prefix)
+                self._execute_function(func_name, new_args, repeat_prefix, repeat_ref_positions)
                 self.trace.append(f"{prefix}.#" if prefix != "epsilon" else "#")
                 return
             

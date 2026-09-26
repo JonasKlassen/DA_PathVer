@@ -1,6 +1,5 @@
 from pysmt.shortcuts import And, Or, Not, Implies, Iff, Equals, LE, Int, Select, TRUE, FALSE, LT, NotEquals, GE, GT, Exists, ForAll, Symbol
 from pysmt.typing import INT
-import re
 
 from DA_PathVer.contract.ast.contract_ast_nodes import *
 
@@ -16,11 +15,10 @@ class ContractFormulaBuilder:
 
     def _visit(self, node, trace, scope):
         if isinstance(node, Modal):
-            if trace == '':
-                trace_regex = "^" + self._visit_trace(node.trace) + "$"
-            else:
-                trace_regex = "^" + trace + '\\.' + self._visit_trace(node.trace) + "$"
-            matched_trace_indices = [t_idx for t_idx in self.trace_indices if re.match(trace_regex, t_idx)]
+            matched_trace_indices = [
+                t_idx for t_idx in self.trace_indices
+                if self._matches_trace(node.trace, t_idx, trace)
+            ]
             formulas = []
             for matched_trace in matched_trace_indices:
                 formula = self._visit(node.contract, matched_trace, scope)
@@ -81,6 +79,55 @@ class ContractFormulaBuilder:
             return self.idx_vars['@fn'][trace][0]
         return None
 
+    def _matches_trace(self, trace, trace_index, prefix):
+        """Return whether a trace expression consumes the requested trace suffix.
+
+        Trace indices are dot-separated paths, while a Kleene star can consume
+        zero path components.  Matching component sequences directly keeps that
+        empty case intact (including when the star appears in a concatenation).
+        """
+        if trace_index == 'epsilon':
+            components = []
+        else:
+            components = trace_index.split('.')
+
+        if prefix:
+            prefix_components = [] if prefix == 'epsilon' else prefix.split('.')
+            if components[:len(prefix_components)] != prefix_components:
+                return False
+            components = components[len(prefix_components):]
+
+        def match(node, position):
+            if isinstance(node, BinOp):
+                if node.op == 'DOT':
+                    positions = set()
+                    for middle in match(node.left, position):
+                        positions.update(match(node.right, middle))
+                    return positions
+                if node.op == 'CUP':
+                    return match(node.left, position) | match(node.right, position)
+            if isinstance(node, UnOp) and node.op == 'KLEENE':
+                positions = {position}
+                frontier = {position}
+                while frontier:
+                    next_frontier = set()
+                    for current in frontier:
+                        next_frontier.update(match(node.value, current))
+                    next_frontier -= positions
+                    positions.update(next_frontier)
+                    frontier = next_frontier
+                return positions
+            if isinstance(node, TraceAtom) or isinstance(node, AstInt):
+                if isinstance(node, TraceAtom) and node.value == 'eps':
+                    return {position}
+                if position == len(components):
+                    return set()
+                if node.value == '?' or str(node.value) == components[position]:
+                    return {position + 1}
+            return set()
+
+        return len(components) in match(trace, 0)
+
 
     def _visit_trace(self, trace):
         if isinstance(trace, BinOp):
@@ -91,7 +138,7 @@ class ContractFormulaBuilder:
         if isinstance(trace, UnOp):
             if trace.op == 'KLEENE':
                 val = self._visit_trace(trace.value)
-                return f"{val}(\\.{val})*"
+                return f"({val}(\\.{val})*)?"
         if isinstance(trace, TraceAtom) or isinstance(trace, AstInt):
             if trace.value == '$': return '[$]'
             if trace.value == '?': return '.'
