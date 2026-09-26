@@ -1,0 +1,38 @@
+global violations, owner, step, perm, level
+local remaining, pid, allowed, audit
+
+fn RUN_SYSTEM (remaining)
+    violations = 0
+    owner = 0
+    step = 0
+    call SCHED_LOOP (remaining, ref audit)
+return
+
+fn SCHED_LOOP (remaining, audit)
+    if remaining <= 0 return
+    call SELECT_PROCESS (ref pid)
+    call CHECK_ACCESS (pid, ref allowed)
+    call EXECUTE (pid, allowed, ref audit)
+    call DENY (allowed)
+    step = step + 1
+    remaining = remaining - 1
+repeat
+
+fn SELECT_PROCESS (pid)
+    pid = step + 1
+return
+
+fn CHECK_ACCESS (pid, allowed)
+    allowed = level <= perm[pid]
+return
+
+fn EXECUTE (pid, allowed, audit)
+    if allowed <= 0 return
+    owner = pid
+    audit[step] = pid
+return
+
+fn DENY (allowed)
+    if 1 <= allowed return
+    violations = violations + 1
+return
