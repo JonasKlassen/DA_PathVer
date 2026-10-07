@@ -1,1 +1,0 @@
-[#](FORALL i : (FORALL j : ((1 <= i & j <= 6 & i < j) => seen[i] <= seen[j])))

@@ -1,1 +1,1 @@
-"""Repeat-Arr contract verifier package."""
+"""Repeat-Arr trace property verifier package."""

@@ -1,18 +1,18 @@
-grammar contract;
+grammar property;
 
 // ---------------- PARSER RULES ----------------
 
-init : contract EOF;
-contract
-    : LPAREN contract RPAREN
-    | (EXISTS|FORALL) VAR COLON LPAREN contract RPAREN
-    | contract (EQ|LE|LT|NEQ|GE|GT) contract
-    | NOT contract
-    | contract (AND|OR) contract
-    | contract (IMPL|EQUIV) contract
-    | LBRACKET trace RBRACKET LPAREN contract RPAREN
-    | LDIAMOND trace RDIAMOND LPAREN contract RPAREN
-    | contract_atom
+init : property EOF;
+property
+    : LPAREN property RPAREN
+    | (EXISTS|FORALL) VAR COLON LPAREN property RPAREN
+    | property (EQ|LE|LT|NEQ|GE|GT) property
+    | NOT property
+    | property (AND|OR) property
+    | property (IMPL|EQUIV) property
+    | LBRACKET trace RBRACKET LPAREN property RPAREN
+    | LDIAMOND trace RDIAMOND LPAREN property RPAREN
+    | property_atom
     ;
 
 trace
@@ -22,7 +22,7 @@ trace
     | trace_atom
     ;
 
-contract_atom
+property_atom
     : VAR
     | indexed_var
     | ATFN

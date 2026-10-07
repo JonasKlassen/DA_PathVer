@@ -1,8 +1,8 @@
 # Dependent Assertion Path Verifier
 
-DA_PathVer is an SMT-based tool for checking contracts over a supplied program execution path. It combines symbolic execution with contracts inspired by dependent assertion logic: properties can refer to entry and return states, intermediate states, nested calls, and repeated procedure bodies.
+DA_PathVer is an SMT-based tool for checking program properties over a supplied execution path. Its property language is inspired by dependent assertion logic and can refer to entry and return states, intermediate states, nested calls, and repeated procedure bodies.
 
-Given a program, a finite control-flow trace, an execution configuration, and a contract, the tool constructs symbolic constraints and searches for a counterexample. The trace fixes the sequence of control-flow events, while memory values remain symbolic wherever the program and contract leave them unconstrained. A check therefore covers the encoded memory valuations compatible with that trace, rather than just the concrete values from one test run.
+Given a program, a finite control-flow trace, an execution configuration, and a property, the tool constructs symbolic constraints and searches for a counterexample. The trace fixes the sequence of control-flow events, while memory values remain symbolic wherever the program and property leave them unconstrained. A check therefore covers the encoded memory valuations compatible with that trace, rather than just the concrete values from one test run.
 
 The current program frontend accepts Repeat-Arr, a small imperative language with integer arrays, procedure calls, and repetition. The core approach is the combination of trace-dependent memory, feasibility constraints, and assertions over selected states. The sections below describe that approach and its implemented capabilities, followed by usage instructions and input-format references.
 
@@ -12,7 +12,7 @@ The approach draws on Lukas Grätz's [*Dependent Assertions for Specification an
 
 ### Dynamic indices and symbolic memory
 
-A source statement can execute several times, in different calls or iterations. A **dynamic index** identifies a particular occurrence using statement numbers and nesting markers. For example, `6.1.#` identifies the return of the call at statement `1` inside the call at statement `6`. These indices let a contract distinguish states that share the same source code location.
+A source statement can execute several times, in different calls or iterations. A **dynamic index** identifies a particular occurrence using statement numbers and nesting markers. For example, `6.1.#` identifies the return of the call at statement `1` inside the call at statement `6`. These indices let a property distinguish states that share the same source code location.
 
 The underlying *dynx semantics* separates execution into three layers:
 
@@ -22,11 +22,11 @@ The underlying *dynx semantics* separates execution into three layers:
 
 The implementation combines the memory and feasibility constraints into a domain formula `D`. This formula describes the encoded executions that follow the supplied control flow. The user supplies the path directly or obtains it with the trace generator. The verifier does not automatically explore alternative paths.
 
-Memory is currently modeled with SMT arrays from integers to integers. A scalar `x` is shorthand for `x[0]`, and updating one array element preserves the others. Integers and arrays have no machine overflow or fixed size in this model. Fresh local values can remain unconstrained, allowing different executions to follow the same trace. A local named `rand`, for example, has no special probabilistic meaning.
+Memory is currently modeled with SMT arrays from integers to integers. A scalar `x` is shorthand for `x[0]`, and updating one array element preserves the others. Integers and arrays have no machine overflow or fixed size in this model. Fresh local values can remain unconstrained, allowing different executions to follow the same trace. A local named `rand`, for example, has no built-in random behavior.
 
-### Dependent assertions
+### Properties over traces
 
-A conventional pre/post contract relates a procedure's entry and exit. Dependent assertions also relate conditions at intermediate states selected by dynamic-index patterns. The same program variable can have different values at each selected state.
+A classical pre/postcondition contract relates a procedure's entry and exit. DA properties can express that contract shape and can also relate conditions at intermediate states selected by dynamic-index patterns. The same program variable can have different values at each selected state. Unlike a conventional modular contract checker, DA_PathVer requires those states to be selected explicitly within a supplied trace.
 
 Two modal operators specify where an assertion must hold:
 
@@ -47,23 +47,23 @@ It can also relate an array before and after the helper call:
 FORALL i : (([6](seen[i] == 1)) => ([7](seen[i] == 1)))
 ```
 
-Here, `seen[i]` is read in two different memory states, while the quantified integer `i` keeps the same value across both modalities. The assertion requires each previously set array entry to remain set after the call. Quantifiers range over integers, independently of the finite set of trace positions.
+Here, `seen[i]` is read in two different memory states, while the quantified integer `i` keeps the same value across both modalities. The property requires each previously set array entry to remain set after the call. Quantifiers range over integers, independently of the finite set of trace positions.
 
-In the theoretical semantics, selectors support concatenation, union, and zero-or-more repetition. A box over an empty selection is true, and a diamond over an empty selection is false. The current selector implementation does not implement all of these cases faithfully, as detailed in the limitations below.
+Selectors support concatenation, union, and zero-or-more repetition. A box over an empty selection is true, and a diamond over an empty selection is false. Wildcards match one dynamic-index component, and `eps` matches the empty suffix.
 
-### From a contract to an SMT query
+### From a property to an SMT query
 
-SMT (satisfiability modulo theories) solving checks whether logical constraints over values such as integers and arrays admit a satisfying assignment. DA_PathVer translates the contract into a formula `C`, resolving boxes into conjunctions and diamonds into disjunctions over matching trace positions. Integer quantifiers remain in the SMT formula.
+SMT (satisfiability modulo theories) solving checks whether logical constraints over values such as integers and arrays admit a satisfying assignment. DA_PathVer translates the property into a formula `P`, resolving boxes into conjunctions and diamonds into disjunctions over matching trace positions. Integer quantifiers remain in the SMT formula.
 
 The solver checks:
 
 ```text
-D AND NOT C
+D AND NOT P
 ```
 
-If this is satisfiable, the model supplies values consistent with the encoded trace that violate the contract. The watch list exposes selected values from that countermodel. If it is unsatisfiable, no counterexample exists in the encoded domain for this trace.
+If this is satisfiable, the model supplies values consistent with the encoded trace that violate the property. The watch list exposes selected values from that countermodel. If it is unsatisfiable, no counterexample exists in the encoded domain for this trace.
 
-This is a single-trace guarantee. It does not establish correctness for other paths, arbitrary iteration counts, or all inputs regardless of control flow. Also, an infeasible trace makes `D` unsatisfiable, so any contract is vacuously valid on that domain. The current CLI and GUI do not perform a separate feasibility query before reporting validity.
+This is a single-trace guarantee. It does not establish correctness for other paths, arbitrary iteration counts, or all inputs regardless of control flow. An infeasible trace makes `D` unsatisfiable, so the counterexample query has no model. The current CLI and GUI do not perform a separate feasibility query before reporting that no counterexample was found.
 
 ## Current Capabilities
 
@@ -73,23 +73,17 @@ This is a single-trace guarantee. It does not establish correctness for other pa
 | Procedure state | Local and global variables, value arguments, reference-result propagation, and fresh non-parameter locals on calls. |
 | Control flow | Encoding of supplied traces containing nested calls, repetition, conditional returns, and computed call targets. Recursive examples are included. |
 | Expressions | Integer addition and subtraction, comparisons, and logical operations represented with configured integer truth values. |
-| Contracts | Comparisons, Boolean connectives, integer quantifiers, scalar and indexed array reads, `@fn`, and modal assertions over trace positions. |
+| Properties | Comparisons, Boolean connectives, integer quantifiers, scalar and indexed array reads, `@fn`, and modal assertions over trace positions. |
 | Solver workflow | PySMT constraints, solver selection with Z3 included as a dependency, and inspection of selected countermodel values. |
-| Interfaces | CLI and Tkinter GUI for verification, concrete trace generation, and a GUI contract editor. |
+| Interfaces | CLI and Tkinter GUI for property checking, concrete trace generation, and a property editor. |
 
-Trace generation executes a program with concrete initial parameter values and writes a trace and target mapping. Those input values are not automatically added as assumptions to subsequent symbolic verification, so any required input restriction must be expressed in the contract.
+Trace generation executes a program with concrete initial parameter values and writes a trace and target mapping. Those input values are not automatically added as assumptions to subsequent symbolic verification, so any required input restriction must be expressed in the property.
 
 ### Scope and current limitations
 
 The implementation is a prototype for finite, supplied traces. It does not provide exhaustive path exploration, induction over loops or recursion, a general termination proof, or probability calculations. Repeat-Arr is the available frontend. A Rust frontend and richer data types are not currently implemented. Extending the source language would also require corresponding symbolic semantics.
 
-Trace selectors currently use a Python regular-expression translation with several differences from the theoretical semantics:
-
-- `?` matches a single character, rather than an arbitrary dynamic-index component.
-- `eps` is accepted by the parser but is not normalized to the trace's `epsilon` entry or treated as the empty suffix.
-- An unmatched modality produces an unresolved result rather than the standard empty-box/empty-diamond truth value. A top-level unresolved result is reported as having no matching cases. For verification, use selectors with known matches.
-
-Contract array indices should be integer literals or bound logical variables. General index expressions and program-variable indices are not supported by the contract resolver. Solver support and performance also depend on the resulting quantified integer/array formulas.
+Property array indices should be integer literals or bound logical variables. General index expressions and program-variable indices are not supported by the property resolver. Solver support and performance also depend on the resulting quantified integer/array formulas.
 
 ## Implementation Overview
 
@@ -97,12 +91,12 @@ Contract array indices should be integer literals or bound logical variables. Ge
 | --- | --- |
 | [`program/`](program/) | Program grammar, generated parser, and abstract syntax tree construction. |
 | [`program_formula_builder.py`](execution/program_formula_builder.py) | Trace loading, symbolic memory construction, and feasibility constraints. |
-| [`contract/`](contract/) | Contract grammar, generated parser, and abstract syntax tree construction. |
-| [`contract_formula_builder.py`](execution/contract_formula_builder.py) | Trace-selector resolution and translation of assertions into PySMT formulas. |
+| [`property/`](property/) | Property grammar, generated parser, and abstract syntax tree construction. |
+| [`property_formula_builder.py`](execution/property_formula_builder.py) | Trace-selector resolution and translation of property formulas into PySMT formulas. |
 | [`trace_generator.py`](execution/trace_generator.py) | Concrete execution and generation of dynamic-index traces and target mappings. |
 | [`execution/`](execution/) | CLI and GUI orchestration of parsing, formula construction, solving, and result inspection. |
 
-The [dice game](examples/dice_game/) illustrates nondeterministic local values, repeated calls, reference arguments, and global state. The [Fibonacci example](examples/fibonacci/) illustrates recursive calls. Both include programs, traces, execution configurations, and contracts for experimentation.
+The [nondeterministic program example](examples/nondeterministic_program/) illustrates how a computed call target constrains values in the trace. The [dice game](examples/dice_game/) illustrates nondeterministic local values, repeated calls, reference arguments, and global state. The [Fibonacci example](examples/fibonacci/) illustrates recursive calls. All three include programs, traces, execution configurations, and properties for experimentation.
 
 ## Installation
 
@@ -113,7 +107,7 @@ python -m venv .venv
 .\.venv\Scripts\pip install -r DA_PathVer\requirements.txt
 ```
 
-The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated parser files are already included, so ANTLR is only needed when changing `program/antlr/repeat_arr.g4` or `contract/antlr/contract.g4`.
+The project depends on PySMT, Z3, and the ANTLR Python runtime. The generated parser files are already included, so ANTLR is only needed when changing either grammar.
 
 To regenerate the program parser after grammar changes:
 
@@ -122,6 +116,13 @@ cd DA_PathVer\program\antlr
 java -jar C:\antlr\antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor repeat_arr.g4
 ```
 This requires the ANTLR software (`https://www.antlr.org/download/antlr-4.13.2-complete.jar`) to be in the folder `C:\antlr`.
+
+To regenerate the property parser after grammar changes:
+
+```bash
+cd DA_PathVer\property\antlr
+java -jar C:\antlr\antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor property.g4
+```
 
 ## Running
 
@@ -141,28 +142,28 @@ python -m DA_PathVer.execution.cli [COMMAND] [OPTIONS]
 
 ## CLI
 
-`run` verifies a contract against a program, execution config, and trace.
+`run` checks a property against a program, execution configuration, and trace.
 
 ```bash
-python -m DA_PathVer.execution.cli run --program FOLDER --trace NUM --solver NAME --formula CONTRACT_FILE_OR_NUM --watch WATCH_ITEMS
+python -m DA_PathVer.execution.cli run --program FOLDER --trace NUM --solver NAME --property PROPERTY_FILE_OR_NUM --watch WATCH_ITEMS
 ```
 
 Example:
 
 ```bash
-python -m DA_PathVer.execution.cli run --program DA_PathVer\examples\dice_game --trace 1 --solver z3 --formula 1 --watch count@0
+python -m DA_PathVer.execution.cli run --program DA_PathVer\examples\dice_game --trace 1 --solver z3 --property 1 --watch count@0
 ```
 
-`generate-trace` creates a new concrete trace and updates the matching execution file.
+`generate-trace` creates a new concrete trace and updates the matching configuration file.
 
 ```bash
-python -m DA_PathVer.execution.cli generate-trace --program FOLDER --input INPUTS --trace NUM --execution SOURCE_NUM
+python -m DA_PathVer.execution.cli generate-trace --program FOLDER --input INPUTS --trace NUM --configuration SOURCE_NUM
 ```
 
 Example:
 
 ```bash
-python -m DA_PathVer.execution.cli generate-trace --program DA_PathVer\examples\dice_game --input count=3 --trace 4 --execution 1
+python -m DA_PathVer.execution.cli generate-trace --program DA_PathVer\examples\dice_game --input count=3 --trace 4 --configuration 1
 ```
 
 For all options:
@@ -177,8 +178,8 @@ Each verified program folder must contain:
 
 1. `program.txt`: Repeat-Arr source code.
 2. `traceN.txt`: Concrete execution trace, for example `trace1.txt`.
-3. `executionN.json`: Configuration matching the trace, including `target` and `const`.
-4. `contractN.txt`: Contract file, for example `contract1.txt`.
+3. `configurationN.json`: Configuration matching the trace, including `target` and `const`.
+4. `propertyN.txt`: Property file, for example `property1.txt`.
 
 Example layout:
 
@@ -186,8 +187,8 @@ Example layout:
 my_program\
 program.txt
 trace1.txt
-execution1.json
-contract1.txt
+configuration1.json
+property1.txt
 ```
 
 ## GUI Workflow
@@ -199,7 +200,7 @@ Step 1: Process Program and Trace
 3. Select the solver, usually `z3`.
 4. Click `Step 1: Process Program & Trace`.
 
-This parses the program, loads the trace and execution JSON, builds the symbolic domain, and populates variable and trace selection lists.
+This parses the program, loads the trace and configuration JSON, builds the symbolic domain, and populates variable and trace selection lists.
 
 Step 2: Watch List Selection
 
@@ -210,12 +211,12 @@ Step 2: Watch List Selection
 
 Watched values are displayed if the solver finds a countermodel.
 
-Step 3: Solve Contract
+Step 3: Check Property
 
-1. Select the contract number.
-2. Click `Step 3: Solve Contract`.
+1. Select the property number.
+2. Click `Step 3: Check Property`.
 
-If the domain together with the negated contract is satisfiable, the GUI reports a countermodel. If the solver determines that the query is unsatisfiable, it reports that the contract is valid for the selected trace, subject to the scope described above.
+If the domain together with the negated property is satisfiable, the GUI reports a counterexample. If the solver determines that the query is unsatisfiable, it reports that no counterexample was found for the selected trace, subject to the scope described above.
 
 Optional: Generate a New Trace
 
@@ -226,16 +227,16 @@ Optional: Generate a New Trace
 5. Enter initial values for the entry function parameters.
 6. Click `Generate Trace`.
 
-If the target `executionN.json` does not exist, the GUI can copy an existing `execution*.json` file from the same folder.
+If the target `configurationN.json` does not exist, the GUI can copy an existing `configuration*.json` file from the same folder.
 
-Optional: Create or Edit a Contract
+Optional: Create or Edit a Property
 
-1. Click `Create/Edit Contract`.
-2. Select the contract number.
+1. Click `Create/Edit Property`.
+2. Select the property number.
 3. Edit the formula.
 4. Save it.
 
-The saved contract uses the plain grammar symbols such as `EXISTS`, `FORALL`, `{}`, `=>`, and `<=>`.
+The saved property uses the plain grammar symbols such as `EXISTS`, `FORALL`, `{}`, `=>`, and `<=>`.
 
 ## Current Program Frontend
 
@@ -274,7 +275,7 @@ return
 
 Local variables are scoped to function activations. Global variables are visible in every function and persist across function calls. A global variable cannot be passed as a `ref` argument.
 
-Function names can be written as constants such as `GAME` or `ROLL_MULT`. Before parsing, these constants are replaced using the `const` section of the selected `executionN.json`.
+Function names can be written as constants such as `GAME` or `ROLL_MULT`. Before parsing, these constants are replaced using the `const` section of the selected `configurationN.json`.
 
 The complete source syntax is defined in the [program grammar](program/antlr/repeat_arr.g4).
 
@@ -304,9 +305,9 @@ epsilon
 #
 ```
 
-## Execution JSON
+## Configuration JSON
 
-`executionN.json` maps trace positions to function IDs and defines constants.
+`configurationN.json` maps trace positions to function IDs and defines constants.
 
 ```json
 {
@@ -330,9 +331,9 @@ Fields:
 
 `TRUE` and `FALSE` should normally be provided as integer constants, usually `1` and `0`.
 
-## Contract Language
+## Property Language
 
-Contracts describe properties over trace positions and program variables.
+Properties describe conditions over program variables at selected trace positions.
 
 Modal forms:
 
@@ -353,10 +354,10 @@ seen[i]
 @fn
 ```
 
-Example contract:
+Example property:
 
 ```text
 [#](FORALL i : (FORALL j : ((1 <= i & j <= 6 & i < j) => seen[i] <= seen[j])))
 ```
 
-Selectors can combine dynamic-index components with concatenation (`r.s`), union (`(r U s)`), and repetition (`(r)*`). See the selector limitations above before using repetition, wildcards, or `eps`. The complete syntax is defined in the [contract grammar](contract/antlr/contract.g4).
+Selectors can combine dynamic-index components with concatenation (`r.s`), union (`(r U s)`), and repetition (`(r)*`). The complete syntax is defined in the [property grammar](property/antlr/property.g4).

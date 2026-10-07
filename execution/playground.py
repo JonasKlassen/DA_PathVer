@@ -11,12 +11,12 @@ def run_playground():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     example_dir = os.path.join(base_dir, "examples", "dice_game")
     program_path = os.path.join(example_dir, "program.txt")
-    execution_path = os.path.join(example_dir, "execution2.json")
+    configuration_path = os.path.join(example_dir, "configuration2.json")
 
     print(f"Loading program from: {program_path}")
     
     # 1. Load and parse the program
-    with open(execution_path, 'r') as f:
+    with open(configuration_path, 'r') as f:
         execution_config = json.load(f)
 
     with open(program_path, 'r') as f:

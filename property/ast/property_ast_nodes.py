@@ -3,11 +3,11 @@ class Node:
 
 
 class Init(Node):
-    def __init__(self, contract):
-        self.contract = contract
+    def __init__(self, formula):
+        self.formula = formula
 
     def __repr__(self):
-        return f"Init({self.contract})"
+        return f"Init({self.formula})"
 
 
 class AstInt(Node):
@@ -47,13 +47,13 @@ class UnOp(Node):
 
 
 class Modal(Node):
-    def __init__(self, mode, trace, contract):
+    def __init__(self, mode, trace, formula):
         self.mode = mode
         self.trace = trace
-        self.contract = contract
+        self.formula = formula
 
     def __repr__(self):
-        return f"Modal({self.mode}, {self.trace}, {self.contract})"
+        return f"Modal({self.mode}, {self.trace}, {self.formula})"
 
 
 class AtFn(Node):
@@ -62,13 +62,13 @@ class AtFn(Node):
 
 
 class Quantifier(Node):
-    def __init__(self, qtype, var, contract):
+    def __init__(self, qtype, var, formula):
         self.qtype = qtype
         self.var = var
-        self.contract = contract
+        self.formula = formula
 
     def __repr__(self):
-        return f"Quantifier({self.qtype}, {self.var}, {self.contract})"
+        return f"Quantifier({self.qtype}, {self.var}, {self.formula})"
 
 
 class TraceAtom(Node):

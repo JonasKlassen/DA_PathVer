@@ -1,0 +1,1 @@
+[0](count > 1) => [#](EXISTS i : (EXISTS j : ( 1 <= i & i <= 6 & 1 <= j & j <= 6 & seen[i] == 1 & seen[j] == 1 & i != j)))

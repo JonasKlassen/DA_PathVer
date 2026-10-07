@@ -68,9 +68,9 @@ WS
 
 rule names:
 init
-contract
+property
 trace
-contract_atom
+property_atom
 indexed_var
 trace_atom
 

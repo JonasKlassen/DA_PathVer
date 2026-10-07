@@ -1,4 +1,4 @@
-# Generated from contract.g4 by ANTLR 4.13.2
+# Generated from property.g4 by ANTLR 4.13.2
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -43,9 +43,9 @@ def serializedATN():
         1,0,0,0,94,95,7,5,0,0,95,11,1,0,0,0,6,44,55,57,73,80,87
     ]
 
-class contractParser ( Parser ):
+class propertyParser ( Parser ):
 
-    grammarFileName = "contract.g4"
+    grammarFileName = "property.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -67,13 +67,13 @@ class contractParser ( Parser ):
                       "WS" ]
 
     RULE_init = 0
-    RULE_contract = 1
+    RULE_property = 1
     RULE_trace = 2
-    RULE_contract_atom = 3
+    RULE_property_atom = 3
     RULE_indexed_var = 4
     RULE_trace_atom = 5
 
-    ruleNames =  [ "init", "contract", "trace", "contract_atom", "indexed_var", 
+    ruleNames =  [ "init", "property", "trace", "property_atom", "indexed_var", 
                    "trace_atom" ]
 
     EOF = Token.EOF
@@ -125,15 +125,15 @@ class contractParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def contract(self):
-            return self.getTypedRuleContext(contractParser.ContractContext,0)
+        def property_(self):
+            return self.getTypedRuleContext(propertyParser.PropertyContext,0)
 
 
         def EOF(self):
-            return self.getToken(contractParser.EOF, 0)
+            return self.getToken(propertyParser.EOF, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_init
+            return propertyParser.RULE_init
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterInit" ):
@@ -154,14 +154,14 @@ class contractParser ( Parser ):
 
     def init(self):
 
-        localctx = contractParser.InitContext(self, self._ctx, self.state)
+        localctx = propertyParser.InitContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_init)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 12
-            self.contract(0)
+            self.property_(0)
             self.state = 13
-            self.match(contractParser.EOF)
+            self.match(propertyParser.EOF)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -171,7 +171,7 @@ class contractParser ( Parser ):
         return localctx
 
 
-    class ContractContext(ParserRuleContext):
+    class PropertyContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
@@ -179,109 +179,109 @@ class contractParser ( Parser ):
             self.parser = parser
 
         def LPAREN(self):
-            return self.getToken(contractParser.LPAREN, 0)
+            return self.getToken(propertyParser.LPAREN, 0)
 
-        def contract(self, i:int=None):
+        def property_(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(contractParser.ContractContext)
+                return self.getTypedRuleContexts(propertyParser.PropertyContext)
             else:
-                return self.getTypedRuleContext(contractParser.ContractContext,i)
+                return self.getTypedRuleContext(propertyParser.PropertyContext,i)
 
 
         def RPAREN(self):
-            return self.getToken(contractParser.RPAREN, 0)
+            return self.getToken(propertyParser.RPAREN, 0)
 
         def VAR(self):
-            return self.getToken(contractParser.VAR, 0)
+            return self.getToken(propertyParser.VAR, 0)
 
         def COLON(self):
-            return self.getToken(contractParser.COLON, 0)
+            return self.getToken(propertyParser.COLON, 0)
 
         def EXISTS(self):
-            return self.getToken(contractParser.EXISTS, 0)
+            return self.getToken(propertyParser.EXISTS, 0)
 
         def FORALL(self):
-            return self.getToken(contractParser.FORALL, 0)
+            return self.getToken(propertyParser.FORALL, 0)
 
         def NOT(self):
-            return self.getToken(contractParser.NOT, 0)
+            return self.getToken(propertyParser.NOT, 0)
 
         def LBRACKET(self):
-            return self.getToken(contractParser.LBRACKET, 0)
+            return self.getToken(propertyParser.LBRACKET, 0)
 
         def trace(self):
-            return self.getTypedRuleContext(contractParser.TraceContext,0)
+            return self.getTypedRuleContext(propertyParser.TraceContext,0)
 
 
         def RBRACKET(self):
-            return self.getToken(contractParser.RBRACKET, 0)
+            return self.getToken(propertyParser.RBRACKET, 0)
 
         def LDIAMOND(self):
-            return self.getToken(contractParser.LDIAMOND, 0)
+            return self.getToken(propertyParser.LDIAMOND, 0)
 
         def RDIAMOND(self):
-            return self.getToken(contractParser.RDIAMOND, 0)
+            return self.getToken(propertyParser.RDIAMOND, 0)
 
-        def contract_atom(self):
-            return self.getTypedRuleContext(contractParser.Contract_atomContext,0)
+        def property_atom(self):
+            return self.getTypedRuleContext(propertyParser.Property_atomContext,0)
 
 
         def EQ(self):
-            return self.getToken(contractParser.EQ, 0)
+            return self.getToken(propertyParser.EQ, 0)
 
         def LE(self):
-            return self.getToken(contractParser.LE, 0)
+            return self.getToken(propertyParser.LE, 0)
 
         def LT(self):
-            return self.getToken(contractParser.LT, 0)
+            return self.getToken(propertyParser.LT, 0)
 
         def NEQ(self):
-            return self.getToken(contractParser.NEQ, 0)
+            return self.getToken(propertyParser.NEQ, 0)
 
         def GE(self):
-            return self.getToken(contractParser.GE, 0)
+            return self.getToken(propertyParser.GE, 0)
 
         def GT(self):
-            return self.getToken(contractParser.GT, 0)
+            return self.getToken(propertyParser.GT, 0)
 
         def AND(self):
-            return self.getToken(contractParser.AND, 0)
+            return self.getToken(propertyParser.AND, 0)
 
         def OR(self):
-            return self.getToken(contractParser.OR, 0)
+            return self.getToken(propertyParser.OR, 0)
 
         def IMPL(self):
-            return self.getToken(contractParser.IMPL, 0)
+            return self.getToken(propertyParser.IMPL, 0)
 
         def EQUIV(self):
-            return self.getToken(contractParser.EQUIV, 0)
+            return self.getToken(propertyParser.EQUIV, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_contract
+            return propertyParser.RULE_property
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterContract" ):
-                listener.enterContract(self)
+            if hasattr( listener, "enterProperty" ):
+                listener.enterProperty(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitContract" ):
-                listener.exitContract(self)
+            if hasattr( listener, "exitProperty" ):
+                listener.exitProperty(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitContract" ):
-                return visitor.visitContract(self)
+            if hasattr( visitor, "visitProperty" ):
+                return visitor.visitProperty(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
-    def contract(self, _p:int=0):
+    def property_(self, _p:int=0):
         _parentctx = self._ctx
         _parentState = self.state
-        localctx = contractParser.ContractContext(self, self._ctx, _parentState)
+        localctx = propertyParser.PropertyContext(self, self._ctx, _parentState)
         _prevctx = localctx
         _startState = 2
-        self.enterRecursionRule(localctx, 2, self.RULE_contract, _p)
+        self.enterRecursionRule(localctx, 2, self.RULE_property, _p)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -290,11 +290,11 @@ class contractParser ( Parser ):
             token = self._input.LA(1)
             if token in [5]:
                 self.state = 16
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 17
-                self.contract(0)
+                self.property_(0)
                 self.state = 18
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 pass
             elif token in [29, 30]:
                 self.state = 20
@@ -305,53 +305,53 @@ class contractParser ( Parser ):
                     self._errHandler.reportMatch(self)
                     self.consume()
                 self.state = 21
-                self.match(contractParser.VAR)
+                self.match(propertyParser.VAR)
                 self.state = 22
-                self.match(contractParser.COLON)
+                self.match(propertyParser.COLON)
                 self.state = 23
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 24
-                self.contract(0)
+                self.property_(0)
                 self.state = 25
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 pass
             elif token in [7]:
                 self.state = 27
-                self.match(contractParser.NOT)
+                self.match(propertyParser.NOT)
                 self.state = 28
-                self.contract(6)
+                self.property_(6)
                 pass
             elif token in [1]:
                 self.state = 29
-                self.match(contractParser.LBRACKET)
+                self.match(propertyParser.LBRACKET)
                 self.state = 30
                 self.trace(0)
                 self.state = 31
-                self.match(contractParser.RBRACKET)
+                self.match(propertyParser.RBRACKET)
                 self.state = 32
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 33
-                self.contract(0)
+                self.property_(0)
                 self.state = 34
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 pass
             elif token in [3]:
                 self.state = 36
-                self.match(contractParser.LDIAMOND)
+                self.match(propertyParser.LDIAMOND)
                 self.state = 37
                 self.trace(0)
                 self.state = 38
-                self.match(contractParser.RDIAMOND)
+                self.match(propertyParser.RDIAMOND)
                 self.state = 39
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 40
-                self.contract(0)
+                self.property_(0)
                 self.state = 41
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 pass
             elif token in [25, 26, 27]:
                 self.state = 43
-                self.contract_atom()
+                self.property_atom()
                 pass
             else:
                 raise NoViableAltException(self)
@@ -369,8 +369,8 @@ class contractParser ( Parser ):
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
                     if la_ == 1:
-                        localctx = contractParser.ContractContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_contract)
+                        localctx = propertyParser.PropertyContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_property)
                         self.state = 46
                         if not self.precpred(self._ctx, 7):
                             from antlr4.error.Errors import FailedPredicateException
@@ -383,12 +383,12 @@ class contractParser ( Parser ):
                             self._errHandler.reportMatch(self)
                             self.consume()
                         self.state = 48
-                        self.contract(8)
+                        self.property_(8)
                         pass
 
                     elif la_ == 2:
-                        localctx = contractParser.ContractContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_contract)
+                        localctx = propertyParser.PropertyContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_property)
                         self.state = 49
                         if not self.precpred(self._ctx, 5):
                             from antlr4.error.Errors import FailedPredicateException
@@ -401,12 +401,12 @@ class contractParser ( Parser ):
                             self._errHandler.reportMatch(self)
                             self.consume()
                         self.state = 51
-                        self.contract(6)
+                        self.property_(6)
                         pass
 
                     elif la_ == 3:
-                        localctx = contractParser.ContractContext(self, _parentctx, _parentState)
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_contract)
+                        localctx = propertyParser.PropertyContext(self, _parentctx, _parentState)
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_property)
                         self.state = 52
                         if not self.precpred(self._ctx, 4):
                             from antlr4.error.Errors import FailedPredicateException
@@ -419,7 +419,7 @@ class contractParser ( Parser ):
                             self._errHandler.reportMatch(self)
                             self.consume()
                         self.state = 54
-                        self.contract(5)
+                        self.property_(5)
                         pass
 
              
@@ -444,33 +444,33 @@ class contractParser ( Parser ):
             self.parser = parser
 
         def LPAREN(self):
-            return self.getToken(contractParser.LPAREN, 0)
+            return self.getToken(propertyParser.LPAREN, 0)
 
         def trace(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(contractParser.TraceContext)
+                return self.getTypedRuleContexts(propertyParser.TraceContext)
             else:
-                return self.getTypedRuleContext(contractParser.TraceContext,i)
+                return self.getTypedRuleContext(propertyParser.TraceContext,i)
 
 
         def RPAREN(self):
-            return self.getToken(contractParser.RPAREN, 0)
+            return self.getToken(propertyParser.RPAREN, 0)
 
         def KLEENE(self):
-            return self.getToken(contractParser.KLEENE, 0)
+            return self.getToken(propertyParser.KLEENE, 0)
 
         def CUP(self):
-            return self.getToken(contractParser.CUP, 0)
+            return self.getToken(propertyParser.CUP, 0)
 
         def trace_atom(self):
-            return self.getTypedRuleContext(contractParser.Trace_atomContext,0)
+            return self.getTypedRuleContext(propertyParser.Trace_atomContext,0)
 
 
         def DOT(self):
-            return self.getToken(contractParser.DOT, 0)
+            return self.getToken(propertyParser.DOT, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_trace
+            return propertyParser.RULE_trace
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterTrace" ):
@@ -491,7 +491,7 @@ class contractParser ( Parser ):
     def trace(self, _p:int=0):
         _parentctx = self._ctx
         _parentState = self.state
-        localctx = contractParser.TraceContext(self, self._ctx, _parentState)
+        localctx = propertyParser.TraceContext(self, self._ctx, _parentState)
         _prevctx = localctx
         _startState = 4
         self.enterRecursionRule(localctx, 4, self.RULE_trace, _p)
@@ -502,26 +502,26 @@ class contractParser ( Parser ):
             la_ = self._interp.adaptivePredict(self._input,3,self._ctx)
             if la_ == 1:
                 self.state = 61
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 62
                 self.trace(0)
                 self.state = 63
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 self.state = 64
-                self.match(contractParser.KLEENE)
+                self.match(propertyParser.KLEENE)
                 pass
 
             elif la_ == 2:
                 self.state = 66
-                self.match(contractParser.LPAREN)
+                self.match(propertyParser.LPAREN)
                 self.state = 67
                 self.trace(0)
                 self.state = 68
-                self.match(contractParser.CUP)
+                self.match(propertyParser.CUP)
                 self.state = 69
                 self.trace(0)
                 self.state = 70
-                self.match(contractParser.RPAREN)
+                self.match(propertyParser.RPAREN)
                 pass
 
             elif la_ == 3:
@@ -539,14 +539,14 @@ class contractParser ( Parser ):
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    localctx = contractParser.TraceContext(self, _parentctx, _parentState)
+                    localctx = propertyParser.TraceContext(self, _parentctx, _parentState)
                     self.pushNewRecursionContext(localctx, _startState, self.RULE_trace)
                     self.state = 75
                     if not self.precpred(self._ctx, 2):
                         from antlr4.error.Errors import FailedPredicateException
                         raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
                     self.state = 76
-                    self.match(contractParser.DOT)
+                    self.match(propertyParser.DOT)
                     self.state = 77
                     self.trace(3) 
                 self.state = 82
@@ -562,7 +562,7 @@ class contractParser ( Parser ):
         return localctx
 
 
-    class Contract_atomContext(ParserRuleContext):
+    class Property_atomContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
@@ -570,42 +570,42 @@ class contractParser ( Parser ):
             self.parser = parser
 
         def VAR(self):
-            return self.getToken(contractParser.VAR, 0)
+            return self.getToken(propertyParser.VAR, 0)
 
         def indexed_var(self):
-            return self.getTypedRuleContext(contractParser.Indexed_varContext,0)
+            return self.getTypedRuleContext(propertyParser.Indexed_varContext,0)
 
 
         def ATFN(self):
-            return self.getToken(contractParser.ATFN, 0)
+            return self.getToken(propertyParser.ATFN, 0)
 
         def INT(self):
-            return self.getToken(contractParser.INT, 0)
+            return self.getToken(propertyParser.INT, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_contract_atom
+            return propertyParser.RULE_property_atom
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterContract_atom" ):
-                listener.enterContract_atom(self)
+            if hasattr( listener, "enterProperty_atom" ):
+                listener.enterProperty_atom(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitContract_atom" ):
-                listener.exitContract_atom(self)
+            if hasattr( listener, "exitProperty_atom" ):
+                listener.exitProperty_atom(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitContract_atom" ):
-                return visitor.visitContract_atom(self)
+            if hasattr( visitor, "visitProperty_atom" ):
+                return visitor.visitProperty_atom(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def contract_atom(self):
+    def property_atom(self):
 
-        localctx = contractParser.Contract_atomContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 6, self.RULE_contract_atom)
+        localctx = propertyParser.Property_atomContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 6, self.RULE_property_atom)
         try:
             self.state = 87
             self._errHandler.sync(self)
@@ -613,7 +613,7 @@ class contractParser ( Parser ):
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 83
-                self.match(contractParser.VAR)
+                self.match(propertyParser.VAR)
                 pass
 
             elif la_ == 2:
@@ -625,13 +625,13 @@ class contractParser ( Parser ):
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 85
-                self.match(contractParser.ATFN)
+                self.match(propertyParser.ATFN)
                 pass
 
             elif la_ == 4:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 86
-                self.match(contractParser.INT)
+                self.match(propertyParser.INT)
                 pass
 
 
@@ -653,21 +653,21 @@ class contractParser ( Parser ):
 
         def VAR(self, i:int=None):
             if i is None:
-                return self.getTokens(contractParser.VAR)
+                return self.getTokens(propertyParser.VAR)
             else:
-                return self.getToken(contractParser.VAR, i)
+                return self.getToken(propertyParser.VAR, i)
 
         def LBRACKET(self):
-            return self.getToken(contractParser.LBRACKET, 0)
+            return self.getToken(propertyParser.LBRACKET, 0)
 
         def RBRACKET(self):
-            return self.getToken(contractParser.RBRACKET, 0)
+            return self.getToken(propertyParser.RBRACKET, 0)
 
         def INT(self):
-            return self.getToken(contractParser.INT, 0)
+            return self.getToken(propertyParser.INT, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_indexed_var
+            return propertyParser.RULE_indexed_var
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterIndexed_var" ):
@@ -688,15 +688,15 @@ class contractParser ( Parser ):
 
     def indexed_var(self):
 
-        localctx = contractParser.Indexed_varContext(self, self._ctx, self.state)
+        localctx = propertyParser.Indexed_varContext(self, self._ctx, self.state)
         self.enterRule(localctx, 8, self.RULE_indexed_var)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 89
-            self.match(contractParser.VAR)
+            self.match(propertyParser.VAR)
             self.state = 90
-            self.match(contractParser.LBRACKET)
+            self.match(propertyParser.LBRACKET)
             self.state = 91
             _la = self._input.LA(1)
             if not(_la==26 or _la==27):
@@ -705,7 +705,7 @@ class contractParser ( Parser ):
                 self._errHandler.reportMatch(self)
                 self.consume()
             self.state = 92
-            self.match(contractParser.RBRACKET)
+            self.match(propertyParser.RBRACKET)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -723,22 +723,22 @@ class contractParser ( Parser ):
             self.parser = parser
 
         def WILDCARD(self):
-            return self.getToken(contractParser.WILDCARD, 0)
+            return self.getToken(propertyParser.WILDCARD, 0)
 
         def DOLLAR(self):
-            return self.getToken(contractParser.DOLLAR, 0)
+            return self.getToken(propertyParser.DOLLAR, 0)
 
         def HASHTAG(self):
-            return self.getToken(contractParser.HASHTAG, 0)
+            return self.getToken(propertyParser.HASHTAG, 0)
 
         def INT(self):
-            return self.getToken(contractParser.INT, 0)
+            return self.getToken(propertyParser.INT, 0)
 
         def EPSILON(self):
-            return self.getToken(contractParser.EPSILON, 0)
+            return self.getToken(propertyParser.EPSILON, 0)
 
         def getRuleIndex(self):
-            return contractParser.RULE_trace_atom
+            return propertyParser.RULE_trace_atom
 
         def enterRule(self, listener:ParseTreeListener):
             if hasattr( listener, "enterTrace_atom" ):
@@ -759,7 +759,7 @@ class contractParser ( Parser ):
 
     def trace_atom(self):
 
-        localctx = contractParser.Trace_atomContext(self, self._ctx, self.state)
+        localctx = propertyParser.Trace_atomContext(self, self._ctx, self.state)
         self.enterRule(localctx, 10, self.RULE_trace_atom)
         self._la = 0 # Token type
         try:
@@ -784,7 +784,7 @@ class contractParser ( Parser ):
     def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
         if self._predicates == None:
             self._predicates = dict()
-        self._predicates[1] = self.contract_sempred
+        self._predicates[1] = self.property_sempred
         self._predicates[2] = self.trace_sempred
         pred = self._predicates.get(ruleIndex, None)
         if pred is None:
@@ -792,7 +792,7 @@ class contractParser ( Parser ):
         else:
             return pred(localctx, predIndex)
 
-    def contract_sempred(self, localctx:ContractContext, predIndex:int):
+    def property_sempred(self, localctx:PropertyContext, predIndex:int):
             if predIndex == 0:
                 return self.precpred(self._ctx, 7)
          

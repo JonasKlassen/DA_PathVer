@@ -1,4 +1,4 @@
-# Generated from contract.g4 by ANTLR 4.13.2
+# Generated from property.g4 by ANTLR 4.13.2
 from antlr4 import *
 from io import StringIO
 import sys
@@ -66,7 +66,7 @@ def serializedATN():
         0,0,158,159,6,30,0,0,159,62,1,0,0,0,5,0,125,130,135,156,1,6,0,0
     ]
 
-class contractLexer(Lexer):
+class propertyLexer(Lexer):
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -127,7 +127,7 @@ class contractLexer(Lexer):
                   "WILDCARD", "DOLLAR", "HASHTAG", "EPSILON", "ATFN", "INT", 
                   "VAR", "COLON", "EXISTS", "FORALL", "WS" ]
 
-    grammarFileName = "contract.g4"
+    grammarFileName = "property.g4"
 
     def __init__(self, input=None, output:TextIO = sys.stdout):
         super().__init__(input, output)

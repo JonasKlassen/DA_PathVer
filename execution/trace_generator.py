@@ -8,7 +8,7 @@ from antlr4 import *
 class TraceGenerator:
     def __init__(self, program, execution, initial_values):
         self.program = program
-        self.execution = execution  # This is the dict from execution.json
+        self.execution = execution  # Configuration data read from JSON
         self.initial_values = initial_values  # dict: var_name -> initial_value (can be int or dict for arrays)
         self.trace = []
         self.target = execution.get('target', {}).copy()

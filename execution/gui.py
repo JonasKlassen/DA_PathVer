@@ -6,29 +6,34 @@ from tkinter import filedialog, messagebox, ttk
 
 from antlr4 import *
 from pysmt.shortcuts import Solver, Not, get_env
-from DA_PathVer.contract.antlr.contractLexer import contractLexer
-from DA_PathVer.contract.antlr.contractParser import contractParser
-from DA_PathVer.contract.ast.contract_ast_builder import ContractASTBuilder
-from DA_PathVer.execution.contract_formula_builder import ContractFormulaBuilder
+from DA_PathVer.property.antlr.propertyLexer import propertyLexer
+from DA_PathVer.property.antlr.propertyParser import propertyParser
+from DA_PathVer.property.ast.property_ast_builder import PropertyASTBuilder
+from DA_PathVer.execution.property_formula_builder import PropertyFormulaBuilder
 from DA_PathVer.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
 from DA_PathVer.program.antlr.repeat_arrLexer import repeat_arrLexer
 from DA_PathVer.program.antlr.repeat_arrParser import repeat_arrParser
 from DA_PathVer.program.ast.program_ast_builder import ProgramASTBuilder
 from DA_PathVer.execution.trace_generator import TraceGenerator
 
+
+def get_property_path(folder, number):
+    return os.path.join(folder, f"property{number}.txt")
+
+
 class RepeatArrVerifierGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Repeat-Arr Verifier")
+        self.root.title("Repeat-Arr Property Verifier")
         self.root.geometry("600x500")
 
         self.program_dir = tk.StringVar()
         self.trace_num = tk.StringVar(value="1")
-        self.contract_num = tk.StringVar(value="1")
-        self.contract_num.trace_add("write", lambda *args: self.update_contract_display())
+        self.property_num = tk.StringVar(value="1")
+        self.property_num.trace_add("write", lambda *args: self.update_property_display())
         self.selected_solver = tk.StringVar(value="z3")
         self.program_dir.trace_add("write", lambda *args: self.on_folder_change(*args))
-        self.program_dir.trace_add("write", lambda *args: self.update_contract_display())
+        self.program_dir.trace_add("write", lambda *args: self.update_property_display())
 
         # History for selection lists
         self.last_populated_vars = []
@@ -60,7 +65,7 @@ class RepeatArrVerifierGUI:
         ttk.Label(num_frame, text="Trace:").pack(side='left')
         ttk.Spinbox(num_frame, from_=1, to=100, textvariable=self.trace_num, width=5).pack(side='left', padx=5)
         ttk.Button(num_frame, text="Create New Trace", command=self.open_create_trace_dialog).pack(side='left', padx=5)
-        ttk.Button(num_frame, text="Create/Edit Contract", command=self.open_create_contract_dialog).pack(side='left', padx=5)
+        ttk.Button(num_frame, text="Create/Edit Property", command=self.open_create_property_dialog).pack(side='left', padx=5)
 
         # Solver Selection
         solver_frame = ttk.Frame(self.root)
@@ -138,13 +143,13 @@ class RepeatArrVerifierGUI:
         # Buttons - Step 3
         step3_frame = ttk.Frame(self.root)
         step3_frame.pack(fill='x', **padding)
-        ttk.Label(step3_frame, text="Contract:").pack(side='left')
-        ttk.Spinbox(step3_frame, from_=1, to=100, textvariable=self.contract_num, width=5).pack(side='left', padx=5)
-        self.solve_btn = ttk.Button(step3_frame, text="Step 3: Solve Contract", command=self.solve_contract)
+        ttk.Label(step3_frame, text="Property:").pack(side='left')
+        ttk.Spinbox(step3_frame, from_=1, to=100, textvariable=self.property_num, width=5).pack(side='left', padx=5)
+        self.solve_btn = ttk.Button(step3_frame, text="Step 3: Check Property", command=self.solve_property)
         self.solve_btn.pack(side='left', padx=5)
 
-        self.contract_display = ttk.Label(step3_frame, text="", foreground="blue")
-        self.contract_display.pack(side='left', padx=5)
+        self.property_display = ttk.Label(step3_frame, text="", foreground="blue")
+        self.property_display.pack(side='left', padx=5)
 
         # Output Area (Log)
         output_frame = ttk.Frame(self.root)
@@ -153,26 +158,26 @@ class RepeatArrVerifierGUI:
         self.log_text = tk.Text(output_frame, height=15)
         self.log_text.pack(fill='both', expand=True)
 
-        self.contract_num.trace_add("write", lambda *args: self.update_contract_display())
+        self.property_num.trace_add("write", lambda *args: self.update_property_display())
 
-    def update_contract_display(self):
+    def update_property_display(self):
         folder = self.program_dir.get()
-        contract_num = self.contract_num.get()
-        if not folder or not contract_num:
-            self.contract_display.config(text="")
+        property_num = self.property_num.get()
+        if not folder or not property_num:
+            self.property_display.config(text="")
             return
 
-        contract_path = os.path.join(folder, f"contract{contract_num}.txt")
-        if os.path.exists(contract_path):
+        property_path = get_property_path(folder, property_num)
+        if os.path.exists(property_path):
             try:
-                with open(contract_path, 'r') as f:
+                with open(property_path, 'r') as f:
                     content = f.read().strip()
                     display_content = self.to_official_symbols(content)
-                    self.contract_display.config(text=display_content)
+                    self.property_display.config(text=display_content)
             except:
-                self.contract_display.config(text="[Error reading file]")
+                self.property_display.config(text="[Error reading file]")
         else:
-            self.contract_display.config(text="[Not found]")
+            self.property_display.config(text="[Not found]")
 
     def browse_folder(self):
         directory = filedialog.askdirectory()
@@ -221,7 +226,7 @@ class RepeatArrVerifierGUI:
 
     def run_execution(self):
         self.process_program()
-        self.solve_contract()
+        self.solve_property()
 
     def process_program(self):
         folder = self.program_dir.get()
@@ -237,18 +242,18 @@ class RepeatArrVerifierGUI:
         
         program_path = os.path.join(folder, "program.txt")
         trace_path = os.path.join(folder, f"trace{trace_num}.txt")
-        execution_path = os.path.join(folder, f"execution{trace_num}.json")
+        configuration_path = os.path.join(folder, f"configuration{trace_num}.json")
         
         # Check files for Step 1 & 2
-        for p in [program_path, trace_path, execution_path]:
+        for p in [program_path, trace_path, configuration_path]:
             if not os.path.exists(p):
                 self.log(f"Error: File not found: {p}")
                 messagebox.showerror("Error", f"File not found: {p}")
                 return
 
         try:
-            self.log("Step 1: Loading Execution and Program...")
-            with open(execution_path, 'r') as f:
+            self.log("Step 1: Loading Configuration and Program...")
+            with open(configuration_path, 'r') as f:
                 execution = json.load(f)
 
             with open(program_path) as f:
@@ -294,54 +299,54 @@ class RepeatArrVerifierGUI:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
             return
 
-    def solve_contract(self):
+    def solve_property(self):
         folder = self.program_dir.get()
-        contract_num = self.contract_num.get()
+        property_num = self.property_num.get()
 
-        # Step 3, 4, 5: Contract parsing and solving (always run)
+        # Step 3, 4, 5: Property parsing and solving (always run)
         # However, we only do this if Step 1/2 succeeded or were cached.
         if self.cached_executor is None:
             return
 
-        contract_path = os.path.join(folder, f"contract{contract_num}.txt")
-        if not os.path.exists(contract_path):
-            self.log(f"Error: File not found: {contract_path}")
-            messagebox.showerror("Error", f"File not found: {contract_path}")
+        property_path = get_property_path(folder, property_num)
+        if not os.path.exists(property_path):
+            self.log(f"Error: Property file not found: {property_path}")
+            messagebox.showerror("Error", f"Property file not found: {property_path}")
             return
 
         try:
-            self.log(f"--- Running Contract {contract_num} ---")
-            self.log("Step 3: Parsing Contract...")
+            self.log(f"--- Checking Property {property_num} ---")
+            self.log("Step 3: Parsing Property...")
             execution = self.cached_execution
-            with open(contract_path) as f:
-                contract_content = f.read()
+            with open(property_path) as f:
+                property_content = f.read()
                 for const_name, const_value in execution.get('const', {}).items():
-                    contract_content = contract_content.replace(const_name, str(const_value))
-                contract_input_stream = InputStream(contract_content)
+                    property_content = property_content.replace(const_name, str(const_value))
+                property_input_stream = InputStream(property_content)
 
-            contract_lexer = contractLexer(contract_input_stream)
-            contract_parser = contractParser(CommonTokenStream(contract_lexer))
-            contract_ast = ContractASTBuilder().visit(contract_parser.contract())
+            property_lexer = propertyLexer(property_input_stream)
+            property_parser = propertyParser(CommonTokenStream(property_lexer))
+            property_ast = PropertyASTBuilder().visit(property_parser.property_())
 
             self.log("Step 4: Building Problem Formula...")
-            cfb = ContractFormulaBuilder(self.cached_trace_info, self.cached_executor.idx_vars)
-            problem = cfb.resolve_formula(contract_ast)
+            formula_builder = PropertyFormulaBuilder(self.cached_trace_info, self.cached_executor.idx_vars)
+            property_formula = formula_builder.resolve_formula(property_ast)
 
-            if problem is None:
-                self.log("Contract found no matching cases.")
+            if property_formula is None:
+                self.log("Could not construct a formula from the selected property.")
                 return
 
             self.log(f"Step 5: Solving with {self.selected_solver.get()}...")
             with Solver(name=self.selected_solver.get()) as solver:
                 solver.add_assertion(self.cached_domain)
-                solver.add_assertion(Not(problem))
+                solver.add_assertion(Not(property_formula))
                 
                 # Clear results table
                 for item in self.results_tree.get_children():
                     self.results_tree.delete(item)
 
                 if solver.solve():
-                    self.log("RESULT: Counter model found (Contract is NOT valid)")
+                    self.log("RESULT: Counterexample found (property is violated on this trace)")
                     
                     # Evaluate Watch List
                     watch_items = self.watch_listbox.get(0, tk.END)
@@ -365,7 +370,7 @@ class RepeatArrVerifierGUI:
                             except Exception as ve:
                                 self.log(f"Error evaluating {item}: {str(ve)}")
                 else:
-                    self.log("RESULT: Contract is valid")
+                    self.log("RESULT: No counterexample found for this property on the selected trace")
 
         except Exception as e:
             self.log(f"An error occurred during Step 3/4/5: {str(e)}")
@@ -412,23 +417,23 @@ class RepeatArrVerifierGUI:
         
         return res
 
-    def open_create_contract_dialog(self):
+    def open_create_property_dialog(self):
         folder = self.program_dir.get()
         if not folder:
             messagebox.showerror("Error", "Please select a program folder.")
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create/Edit Contract")
+        dialog.title("Create/Edit Property")
         dialog.geometry("500x400")
 
         padding = {'padx': 10, 'pady': 5}
         
         num_frame = ttk.Frame(dialog)
         num_frame.pack(fill='x', **padding)
-        ttk.Label(num_frame, text="Contract NUM:").pack(side='left')
-        contract_num_var = tk.IntVar(value=self.contract_num.get())
-        ttk.Spinbox(num_frame, from_=1, to=100, textvariable=contract_num_var, width=5).pack(side='left', padx=5)
+        ttk.Label(num_frame, text="Property NUM:").pack(side='left')
+        property_num_var = tk.IntVar(value=self.property_num.get())
+        ttk.Spinbox(num_frame, from_=1, to=100, textvariable=property_num_var, width=5).pack(side='left', padx=5)
 
         # Editor
         editor_frame = ttk.Frame(dialog)
@@ -457,28 +462,28 @@ class RepeatArrVerifierGUI:
         
         # Load existing if available
         def load_existing(*args):
-            path = os.path.join(folder, f"contract{contract_num_var.get()}.txt")
+            path = get_property_path(folder, property_num_var.get())
             editor.delete("1.0", tk.END)
             if os.path.exists(path):
                 with open(path, 'r') as f:
                     content = f.read()
                     editor.insert("1.0", self.to_official_symbols(content))
         
-        contract_num_var.trace_add("write", load_existing)
+        property_num_var.trace_add("write", load_existing)
         load_existing()
 
         def save():
-            num = contract_num_var.get()
+            num = property_num_var.get()
             content = editor.get("1.0", tk.END).strip()
             internal_content = self.from_official_symbols(content)
-            path = os.path.join(folder, f"contract{num}.txt")
+            path = get_property_path(folder, num)
             with open(path, 'w') as f:
                 f.write(internal_content)
-            self.contract_num.set(num)
-            self.update_contract_display()
+            self.property_num.set(num)
+            self.update_property_display()
             dialog.destroy()
 
-        ttk.Button(dialog, text="Save Contract", command=save).pack(pady=10)
+        ttk.Button(dialog, text="Save Property", command=save).pack(pady=10)
 
     def open_create_trace_dialog(self):
         folder = self.program_dir.get()
@@ -510,29 +515,29 @@ class RepeatArrVerifierGUI:
             value_entries.clear()
 
             trace_num = trace_num_var.get()
-            execution_path = os.path.join(folder, f"execution{trace_num}.json")
+            configuration_path = os.path.join(folder, f"configuration{trace_num}.json")
             program_path = os.path.join(folder, "program.txt")
 
-            if not os.path.exists(execution_path):
-                # Offer to create from existing execution files
-                execution_files = [f for f in os.listdir(folder) if f.startswith("execution") and f.endswith(".json")]
-                if not execution_files:
-                    messagebox.showerror("Error", f"Execution file not found: {execution_path}\nNo other execution files found to copy from.")
+            if not os.path.exists(configuration_path):
+                # Offer to create from existing configuration files
+                configuration_files = [f for f in os.listdir(folder) if f.startswith("configuration") and f.endswith(".json")]
+                if not configuration_files:
+                    messagebox.showerror("Error", f"Configuration file not found: {configuration_path}\nNo other configuration files found to copy from.")
                     return
                 
                 # Create a simple selection dialog
                 pick_dialog = tk.Toplevel(dialog)
-                pick_dialog.title("Select execution file to copy")
+                pick_dialog.title("Select configuration file to copy")
                 pick_dialog.geometry("300x200")
                 
-                tk.Label(pick_dialog, text=f"execution{trace_num}.json does not exist.\nSelect an existing one to copy from:").pack(pady=5)
+                tk.Label(pick_dialog, text=f"configuration{trace_num}.json does not exist.\nSelect an existing one to copy from:").pack(pady=5)
                 
-                selected_file = tk.StringVar(value=execution_files[0])
-                ttk.Combobox(pick_dialog, textvariable=selected_file, values=execution_files, state="readonly").pack(pady=5)
+                selected_file = tk.StringVar(value=configuration_files[0])
+                ttk.Combobox(pick_dialog, textvariable=selected_file, values=configuration_files, state="readonly").pack(pady=5)
                 
                 def do_copy():
                     src = os.path.join(folder, selected_file.get())
-                    shutil.copy(src, execution_path)
+                    shutil.copy(src, configuration_path)
                     pick_dialog.destroy()
                     load_params() # Retry loading
 
@@ -543,7 +548,7 @@ class RepeatArrVerifierGUI:
                 return
 
             try:
-                with open(execution_path, 'r') as f:
+                with open(configuration_path, 'r') as f:
                     execution_config = json.load(f)
                 
                 with open(program_path, 'r') as f:
@@ -566,7 +571,7 @@ class RepeatArrVerifierGUI:
                     if 'GAME' in execution_config.get('const', {}):
                         start_func_id = execution_config['const']['GAME']
                     else:
-                        messagebox.showerror("Error", "'epsilon' entry not found in target map of execution.json")
+                        messagebox.showerror("Error", "'epsilon' entry not found in target map of configuration.json")
                         return
 
                 # Find the function in AST
@@ -645,11 +650,11 @@ class RepeatArrVerifierGUI:
 
     def generate_new_trace(self, folder, trace_num, initial_values):
         try:
-            execution_path = os.path.join(folder, f"execution{trace_num}.json")
+            configuration_path = os.path.join(folder, f"configuration{trace_num}.json")
             program_path = os.path.join(folder, "program.txt")
             trace_out_path = os.path.join(folder, f"trace{trace_num}.txt")
 
-            with open(execution_path, 'r') as f:
+            with open(configuration_path, 'r') as f:
                 execution_config = json.load(f)
 
             with open(program_path, 'r') as f:
@@ -707,14 +712,14 @@ class RepeatArrVerifierGUI:
             with open(trace_out_path, 'w') as f:
                 f.write("\n".join(trace))
             
-            # Update execution.json
+            # Update the configuration file
             if 'target' not in execution_config:
                 execution_config['target'] = {}
             execution_config['target'].update(updated_target)
-            with open(execution_path, 'w') as f:
+            with open(configuration_path, 'w') as f:
                 json.dump(execution_config, f, indent=2)
 
-            self.log(f"Successfully generated {trace_out_path} and updated {execution_path}")
+            self.log(f"Successfully generated {trace_out_path} and updated {configuration_path}")
             # messagebox.showinfo("Success", f"Trace {trace_num} generated successfully.")
 
         except Exception as e:

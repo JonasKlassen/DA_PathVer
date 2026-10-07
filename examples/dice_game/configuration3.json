@@ -1,0 +1,16 @@
+{
+  "target": {
+    "epsilon": 8,
+    "6": 9,
+    "6.1": 10,
+    "6.$": 9,
+    "6.$.1": 10
+  },
+  "const": {
+    "TRUE": 1,
+    "FALSE": 0,
+    "GAME": 8,
+    "ROLL_MULT": 9,
+    "ROLL_ONCE": 10
+  }
+}

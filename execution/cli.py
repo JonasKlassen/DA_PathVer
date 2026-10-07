@@ -9,10 +9,10 @@ from antlr4 import *
 from pysmt.shortcuts import Solver, Not, get_env, Select, Int
 
 # These imports assume we are in the project root
-from DA_PathVer.contract.antlr.contractLexer import contractLexer
-from DA_PathVer.contract.antlr.contractParser import contractParser
-from DA_PathVer.contract.ast.contract_ast_builder import ContractASTBuilder
-from DA_PathVer.execution.contract_formula_builder import ContractFormulaBuilder
+from DA_PathVer.property.antlr.propertyLexer import propertyLexer
+from DA_PathVer.property.antlr.propertyParser import propertyParser
+from DA_PathVer.property.ast.property_ast_builder import PropertyASTBuilder
+from DA_PathVer.execution.property_formula_builder import PropertyFormulaBuilder
 from DA_PathVer.execution.program_formula_builder import ProgramFormulaBuilder, load_trace
 from DA_PathVer.program.antlr.repeat_arrLexer import repeat_arrLexer
 from DA_PathVer.program.antlr.repeat_arrParser import repeat_arrParser
@@ -22,20 +22,20 @@ from DA_PathVer.execution.trace_generator import TraceGenerator
 def run_solver(args):
     folder = args.program
     trace_num = args.trace
-    contract_file = args.formula
+    property_file = args.property
     solver_name = args.solver
     watch_items_str = args.watch
 
     program_path = os.path.join(folder, "program.txt")
     trace_path = os.path.join(folder, f"trace{trace_num}.txt")
-    execution_path = os.path.join(folder, f"execution{trace_num}.json")
+    configuration_path = os.path.join(folder, f"configuration{trace_num}.json")
     
-    if not os.path.exists(program_path) or not os.path.exists(trace_path) or not os.path.exists(execution_path):
-        print("Error: Missing program, trace, or execution file.")
+    if not os.path.exists(program_path) or not os.path.exists(trace_path) or not os.path.exists(configuration_path):
+        print("Error: Missing program, trace, or configuration file.")
         sys.exit(1)
 
     # 1. Process Program
-    with open(execution_path, 'r') as f:
+    with open(configuration_path, 'r') as f:
         execution = json.load(f)
 
     with open(program_path) as f:
@@ -52,40 +52,37 @@ def run_solver(args):
     trace_info = load_trace(ast, trace_path, execution['target'])
     domain = executor.build_domain(trace_info)
 
-    # 2. Process Contract
-    if not os.path.exists(contract_file):
-        # Try constructing path if it's a number
-        possible_path = os.path.join(folder, f"contract{contract_file}.txt")
-        if os.path.exists(possible_path):
-            contract_file = possible_path
-        else:
-            print(f"Error: Contract file not found: {contract_file}")
+    # 2. Process property
+    if not os.path.exists(property_file):
+        property_file = os.path.join(folder, f"property{property_file}.txt")
+        if not os.path.exists(property_file):
+            print(f"Error: Property file not found: {args.property}")
             sys.exit(1)
 
-    with open(contract_file) as f:
-        contract_content = f.read()
+    with open(property_file) as f:
+        property_content = f.read()
         for const_name, const_value in execution.get('const', {}).items():
-            contract_content = contract_content.replace(const_name, str(const_value))
-        contract_input_stream = InputStream(contract_content)
+            property_content = property_content.replace(const_name, str(const_value))
+        property_input_stream = InputStream(property_content)
 
-    contract_lexer = contractLexer(contract_input_stream)
-    contract_parser = contractParser(CommonTokenStream(contract_lexer))
-    contract_ast = ContractASTBuilder().visit(contract_parser.contract())
+    property_lexer = propertyLexer(property_input_stream)
+    property_parser = propertyParser(CommonTokenStream(property_lexer))
+    property_ast = PropertyASTBuilder().visit(property_parser.property_())
 
-    cfb = ContractFormulaBuilder(trace_info, executor.idx_vars)
-    problem = cfb.resolve_formula(contract_ast)
+    formula_builder = PropertyFormulaBuilder(trace_info, executor.idx_vars)
+    property_formula = formula_builder.resolve_formula(property_ast)
 
-    if problem is None:
-        print("Contract found no matching cases.")
+    if property_formula is None:
+        print("Could not construct a formula from the selected property.")
         return
 
     # 3. Solve
     with Solver(name=solver_name) as solver:
         solver.add_assertion(domain)
-        solver.add_assertion(Not(problem))
+        solver.add_assertion(Not(property_formula))
         
         if solver.solve():
-            print("RESULT: Counter model found (Contract is NOT valid)")
+            print("RESULT: Counterexample found (property is violated on this trace)")
             if watch_items_str:
                 model = solver.get_model()
                 # Parse watch items
@@ -119,7 +116,7 @@ def run_solver(args):
                     else:
                         print(f"Could not parse watch item: {item}")
         else:
-            print("RESULT: Contract is valid")
+            print("RESULT: No counterexample found for this property on the selected trace")
 
 def generate_trace(args):
     folder = args.program
@@ -157,18 +154,18 @@ def generate_trace(args):
 
     # I need to know the trace number to generate.
     # The example is `python generate-trace --program FOLDER --input VALUES`
-    # I have --trace and optional --execution.
+    # I have --trace and optional --configuration.
     trace_num = args.trace
-    execution_num = args.execution if args.execution else trace_num
+    configuration_num = args.configuration if args.configuration else trace_num
     
     # Use TraceGenerator
     try:
-        execution_path_src = os.path.join(folder, f"execution{execution_num}.json")
-        execution_path_dst = os.path.join(folder, f"execution{trace_num}.json")
+        configuration_path_src = os.path.join(folder, f"configuration{configuration_num}.json")
+        configuration_path_dst = os.path.join(folder, f"configuration{trace_num}.json")
         program_path = os.path.join(folder, "program.txt")
         trace_out_path = os.path.join(folder, f"trace{trace_num}.txt")
 
-        with open(execution_path_src, 'r') as f:
+        with open(configuration_path_src, 'r') as f:
             execution_config = json.load(f)
 
         with open(program_path) as f:
@@ -232,12 +229,12 @@ def generate_trace(args):
         with open(trace_out_path, 'w') as f:
             f.write("\n".join(trace))
         
-        # Update execution.json
+        # Update the configuration file
         execution_config['target'] = updated_target
-        with open(execution_path_dst, 'w') as f:
+        with open(configuration_path_dst, 'w') as f:
             json.dump(execution_config, f, indent=2)
 
-        print(f"Successfully generated {trace_out_path} and updated {execution_path_dst}")
+        print(f"Successfully generated {trace_out_path} and updated {configuration_path_dst}")
 
     except Exception as e:
         print(f"Error generating trace: {e}")
@@ -250,11 +247,14 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     # Run command
-    run_parser = subparsers.add_parser("run", help="Run symbolic execution and verify contracts")
-    run_parser.add_argument("--program", required=True, help="Path to the program folder (must contain program.txt, executionN.json, traceN.txt)")
+    run_parser = subparsers.add_parser("run", help="Check a property over a supplied trace")
+    run_parser.add_argument("--program", required=True, help="Path to the program folder (must contain program.txt, configurationN.json, traceN.txt)")
     run_parser.add_argument("--trace", required=True, help="Trace number (N) to use (e.g., 1)")
     run_parser.add_argument("--solver", required=True, help="Name of the solver to use (e.g., z3)")
-    run_parser.add_argument("--formula", required=True, help="Path to contract file or contract number (e.g., 1 for contract1.txt)")
+    run_parser.add_argument(
+        "--property", required=True,
+        help="Path to a property file or its number (propertyN.txt)",
+    )
     run_parser.add_argument("--watch", help="Comma-separated list of watch items (format: var[idx]@trace, e.g., count[0]@#,res@#)")
 
     # Generate Trace command
@@ -262,7 +262,7 @@ def main():
     gen_parser.add_argument("--program", required=True, help="Path to the program folder")
     gen_parser.add_argument("--input", required=True, nargs='+', help="Input values (format: param1=val1, param2=val2, or JSON string)")
     gen_parser.add_argument("--trace", required=True, help="New trace number (N) to create (e.g., 2)")
-    gen_parser.add_argument("--execution", help="Optional execution number to use as a source configuration (defaults to trace number if not provided)")
+    gen_parser.add_argument("--configuration", help="Optional configuration number to use as a source (defaults to trace number if not provided)")
 
     args = parser.parse_args()
 

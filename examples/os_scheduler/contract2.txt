@@ -1,1 +1,0 @@
-[3.3.#](FORALL i : (((1 <= i) & (owner == i)) => (level <= perm[i])))

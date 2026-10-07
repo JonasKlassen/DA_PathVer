@@ -1,0 +1,1 @@
+[#](EXISTS i: (1 <= i & i <= 6 & seen[i] == 1 & prize == 0))

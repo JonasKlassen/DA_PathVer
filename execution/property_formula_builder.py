@@ -1,10 +1,10 @@
 from pysmt.shortcuts import And, Or, Not, Implies, Iff, Equals, LE, Int, Select, TRUE, FALSE, LT, NotEquals, GE, GT, Exists, ForAll, Symbol
 from pysmt.typing import INT
 
-from DA_PathVer.contract.ast.contract_ast_nodes import *
+from DA_PathVer.property.ast.property_ast_nodes import *
 
 
-class ContractFormulaBuilder:
+class PropertyFormulaBuilder:
     def __init__(self, trace_info, idx_vars):
         self.trace_info = trace_info  # List of (t_idx, f_name, stmt)
         self.trace_indices = [t[0] for t in trace_info]
@@ -19,9 +19,12 @@ class ContractFormulaBuilder:
                 t_idx for t_idx in self.trace_indices
                 if self._matches_trace(node.trace, t_idx, trace)
             ]
+            if not matched_trace_indices:
+                return TRUE() if node.mode == 'BOX' else FALSE()
+
             formulas = []
             for matched_trace in matched_trace_indices:
-                formula = self._visit(node.contract, matched_trace, scope)
+                formula = self._visit(node.formula, matched_trace, scope)
                 if formula is not None:
                     formulas.append(formula)
             if len(formulas) == 0: return None
@@ -53,7 +56,7 @@ class ContractFormulaBuilder:
             qvar = Symbol(node.var, INT)
             new_scope = scope.copy()
             new_scope[node.var] = qvar
-            formula = self._visit(node.contract, trace, new_scope)
+            formula = self._visit(node.formula, trace, new_scope)
             if node.qtype == 'EXISTS': return Exists([qvar], formula)
             else: return ForAll([qvar], formula)
         elif isinstance(node, Var):
@@ -69,7 +72,7 @@ class ContractFormulaBuilder:
                     if node.index in scope:
                         idx = scope[node.index]
                     else:
-                        # This shouldn't happen if the contract is well-formed
+                        # This shouldn't happen if the property is well-formed
                         # But maybe it's a program variable? Not supported as index here yet.
                         idx = Int(0) 
             return Select(sym, idx)
@@ -78,7 +81,6 @@ class ContractFormulaBuilder:
         elif isinstance(node, AtFn):
             return self.idx_vars['@fn'][trace][0]
         return None
-
     def _matches_trace(self, trace, trace_index, prefix):
         """Return whether a trace expression consumes the requested trace suffix.
 
@@ -144,4 +146,6 @@ class ContractFormulaBuilder:
             if trace.value == '?': return '.'
             return str(trace.value)
         return None
+
+
 
